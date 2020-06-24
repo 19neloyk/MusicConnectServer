@@ -1,0 +1,19 @@
+{
+  "name": "musicconnectserver",
+  "version": "1.0.0",
+  "description": "Music Connect Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js ",
+    "dev": "nodemon index.js"
+  },
+  "author": "Neloy Kundu",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.9.17"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
