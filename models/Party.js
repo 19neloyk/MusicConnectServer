@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 const PartySchema = new mongoose.Schema({
-    hostId: {
+    hostName: {
         type: String,
         required:true
     },
@@ -11,20 +11,26 @@ const PartySchema = new mongoose.Schema({
         required:false
     }],
     songs : [{
-        required: false,
+        required: true,
         name : {
             type: String,
             required: true
         },
-        isrc : {
-            type: String,
-            required: false
-        },
+        arists: [{
+            name: {
+                type: String,
+                required: true
+            }
+        }],
         count : {
             type: Number,
             required: true
         }
-    }]
+    }],
+    peopleInParty : {
+        type: Number,
+        required: true
+    }
 
 });
 
