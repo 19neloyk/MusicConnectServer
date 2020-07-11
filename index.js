@@ -178,6 +178,18 @@ app.post('/joinparty', (req, res) => {
   });
 });
 
+app.post('/removeparty', (req,res) => {
+  const {hostName} = req.body;
+  Party.findOneAndRemove({hostName: hostName}, err => {
+    if (err){
+      res.json({"Message":"Error deleting party"});
+    } else {
+      res.json({"Message":"Party deletion successful"});
+    }
+  });
+});
+
+
 
 //EVERYTHING PAST THIS IS FOR SPOTIFY AUTHORIZATION
 // POST /api/token 
