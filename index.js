@@ -93,12 +93,12 @@ app.post('/login', (req,res) => {
 
 //To start a new party
 app.post('/newparty', (req,res) => {
-  const {hostName, peopleInParty} = req.body 
+  const {hostName} = req.body 
   res.send('Starting a new party ');
   Party.findOne({hostName : hostName}). then (party => {
       if (party) {
-        res.json({"message":"Party already exists",
-      "doesPartyExist":"false"})
+        res.json({"title":"Redundant",
+      "message":"Party already exists"})
       } else {
         const newParty = new Party ({
           hostName: hostName,
@@ -107,8 +107,8 @@ app.post('/newparty', (req,res) => {
           peopleInParty: 1
         });
         newParty.save();
-        res.json({"message":"Party does not exist",
-        "doesPartyExist":"true"})
+        res.json({"title":"Success",
+        "message":"A new party has been made"})
       }
   });
 });
@@ -124,14 +124,14 @@ app.get('/checkparty', async(req,res) => {
       partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
       let songsToSend =  partySongs.slice(0,15)
       res.json({
+        "title": "Success",
         "message": "Party exists",
         "doesPartyExist" : true,
-        "partyDetails" : {
-          "topSongs" : songsToSend
-        }
-    });
+        "topSongs" : songsToSend
+        });
     } else {
       res.json({
+        "title": "Party Not Found",
         "message": "Party does not exist",
         "doesPartyExist" : false});
     }
@@ -171,9 +171,10 @@ app.post('/joinparty', (req, res) => {
       party.songs = partySongs;
       party.markModified('songs');
       party.save(err => {console.log(err)});
-      res.json({"status":"Success"});
+      res.json({"Title":"Success",
+      "Message":"Success joining party"});
     } else {
-      res.json({"status":"Failure"});
+      res.json({"Title":"Error","Message":"Failure joining party"});
     }
   });
 });
@@ -182,9 +183,9 @@ app.post('/removeparty', (req,res) => {
   const {hostName} = req.body;
   Party.findOneAndRemove({hostName: hostName}, err => {
     if (err){
-      res.json({"Message":"Error deleting party"});
+      res.json({"Title":"Error","Message":"Could not delete party"});
     } else {
-      res.json({"Message":"Party deletion successful"});
+      res.json({"Title":"Success","Message":"Party deletion successful"});
     }
   });
 });
