@@ -12,17 +12,9 @@ const PartySchema = new mongoose.Schema({
     }],
     songs : [{
         _id : false,
-        name : {
-            type: String,
-            required: true
-        },
-        artists: [{
-            name: String
-        }],
-        count : {
-            type: Number,
-            required: true
-        }
+        name : String,
+        artists : [String],
+        count : Number
     }], 
     peopleInParty : {
         type: Number,
