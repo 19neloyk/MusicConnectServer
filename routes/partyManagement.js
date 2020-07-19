@@ -66,17 +66,13 @@ router.post('/newparty', (req,res) => {
       if (party){
         curPartySongs = party.songs
         let songObjects = songs.map(song => ({
-          name : song.name,
           artists : song.artists,
+          name : song.name,
           count : 0
         }))
-        //Object.assign(party.songs, songObjects)
-        if (curPartySongs.length < 2){  //Pushing only works when there is low length
-          curPartySongs = songObjects
-        } else {
-          curPartySongs.push(songObjects)
-        }
-        party.songs = curPartySongs
+        newPartySongs = curPartySongs.concat(songObjects)
+        console.log(newPartySongs)
+        party.songs = newPartySongs
         party.markModified('songs');
         party.save(err => {console.log(err)});
         res.json({"title":"Success",
