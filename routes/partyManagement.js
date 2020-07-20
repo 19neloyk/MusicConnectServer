@@ -58,21 +58,72 @@ router.post('/newparty', (req,res) => {
       }
     })
   });
-  
+
+  //Compare function for sorting the songs on the database
+  function songCompare (song1, song2) { //Comparison function used for javascript sort function as well as binary search implementation
+    if (song1.name > song2.name) { //Case where first name is greater
+      return 1
+    } else if (song1.name < song2.name){ //Case where second name is greater
+      return -1
+    } else { //Case where song names are the same
+      if (song1.artists.filter(value => song2.artists.includes(value)).length > 1){   //Case where songs have the same song name and one artist in common (assumption that this quality indicates the same songs)
+        return 0
+      } else if (song1.artists[0] > song2.artists[0]){ //Case where first artists listed between the two songs is greater for song1
+        return 1 
+      } else {  //Case where first artists listed between the two songs is greater for song2
+        return -1
+      }
+    }
+  }
+
+  //Search function to increment song counts or (if query song is not present in the party) add song to party
+  function songAdd (songArr, aSong){
+    var start = 0
+    var end = songArr.length 
+    while (start <= end) {
+      var mid = Math.floor((start+end)/2)
+      if (songCompare(aSong,songArr[mid]) === 0){
+        songArr[mid].count += 1
+        return 
+      } else if (songCompare(aSong,songArr[mid]) > 0){
+        start = mid + 1
+      } else {
+        end = mid - 1
+      }
+    }
+    //Case where song is not found in songArr; add song to party
+    songArr.splice(start, 0, {      //start is exactly one position after end and we know that aSong belongs between start and end 
+      artists : aSong.artists,
+      name : aSong.name,
+      count : 1
+    })
+  }
+
   router.post('/joinparty', async(req, res) => {
     console.log("USER CONNECTING TO THE PARTY")
     const {hostName, songs} = req.body //Song will have field name and artists
     Party.findOne({hostName :hostName}).then (party => {
       if (party){
-        curPartySongs = party.songs
-        let songObjects = songs.map(song => ({
-          artists : song.artists,
-          name : song.name,
-          count : 0
-        }))
-        newPartySongs = curPartySongs.concat(songObjects)
-        console.log(newPartySongs)
-        party.songs = newPartySongs
+        if (party.songs.length < 2){
+          curPartySongs = party.songs
+          let songObjects = songs.map(song => ({
+            artists : song.artists,
+            name : song.name,
+            count : 1
+          }))
+          newPartySongs = curPartySongs.concat(songObjects)
+          newPartySongs = newPartySongs.sort(songCompare)
+          console.log(newPartySongs)
+          party.songs = newPartySongs
+        } else { 
+          curPartySongs = party.songs
+          for (aSong in songs){
+            songAdd(curPartySongs, songs)
+          }
+          newPartySongs = curPartySongs
+          console.log(newPartySongs)
+          party.songs = newPartySongs
+        }
         party.markModified('songs');
         party.save(err => {console.log(err)});
         res.json({"title":"Success",
