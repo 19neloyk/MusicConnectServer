@@ -4,6 +4,9 @@ const mongoose = require('mongoose')
 
 const Party = require('../models/Party')
 
+//For jwt (verifiable requests)
+const jwt = require('jsonwebtoken')
+
 //To start a new party
 router.post('/newparty', (req,res) => {
     console.log(req.body)
@@ -147,6 +150,19 @@ router.post('/newparty', (req,res) => {
       }
     });
   });
+
+  function authenticateToken(req,res,next) {    //This is middleware to verify json web token requests// next represents the otherwise callback function of express routes
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1] //First checks if there is header; then looks at header which is in the form 'BEARER <TOKEN>'; note that token is second element of the split string array
+    if (token == null){  //case where token does not exist and authHeader = null
+      return res.json({"title":"Action unavailable","message":"The action could not be completed"}) 
+    }
+    //Now, verify the jwt
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err, user) => { //Remember that a user is result of the callback because the payload has a user object
+      req.user = user 
+      next()
+    })
+  }
 
 
   module.exports = router

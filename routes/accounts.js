@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
 const User = require('../models/User')
 //Used for password encryption
 const bcrypt = require('bcrypt')
+//For jwt
+const jwt = require('jsonwebtoken')
+
 
 router.post('/newuser', async (req,res) => {
     console.log('What is poppin')
@@ -54,7 +57,10 @@ router.post('/login', (req,res) => {
                     res.json({"heading":"Error", "statement": "Could not log in. Please try again."});
                 } else {
                     if (same) {
-                        res.json({"heading":"Success", "statement": "You have logged in successfully"});
+                        //Doing web token stuff
+                        const thepayload = {name:username} //this goes in the jwt payload
+                        const accessToken = jwt.sign(thepayload,process.env.ACCESS_TOKEN_SECRET) //Pull the secret from the environment variable; try not to have expiration if there is no refresh token
+                        res.json({"heading":"Success", "statement": "You have logged in successfully","accessToken":accessToken});
                     } else {
                         res.json({"heading":"Incorrect password", "statement": "Please try again"});
                     }
