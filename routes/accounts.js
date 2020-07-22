@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User')
 //Used for password encryption
 const bcrypt = require('bcrypt')
+
 //For jwt
 const jwt = require('jsonwebtoken')
 

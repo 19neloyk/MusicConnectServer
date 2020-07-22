@@ -1,0 +1,17 @@
+POST http://localhost:5000/newuser
+content-type: application/json
+
+{
+    "name": "neloy",
+    "password": "password"
+}
+
+###
+
+POST http://localhost:5000/login
+content-type: application/json
+
+{
+    "name": "neloy",
+    "password": "password"
+}
