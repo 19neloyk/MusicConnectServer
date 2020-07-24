@@ -3,8 +3,14 @@ const router = express.Router()
 //Used for database
 const mongoose = require('mongoose');
 const User = require('../models/User')
+//Used for password encryption
+const bcrypt = require('bcrypt')
 
-router.post('/newuser', (req,res) => {
+//For jwt
+const jwt = require('jsonwebtoken')
+
+
+router.post('/newuser', async (req,res) => {
     console.log('What is poppin')
     const {username, email, password} = req.body
     User.findOne ({email:email})
@@ -19,17 +25,23 @@ router.post('/newuser', (req,res) => {
                 if (anotherUser) {
                     res.json({"heading":"Username taken",
                       "statement":"Use a different Username"})
-                    return
                 } else {
-                    //Create new user
-                    const newUser = new User ({
-                        name: username,
-                        email:email,
-                        password:password
-                    });
-                    newUser.save()
-                    res.json({"heading":"Success",
-                                    "statement":"Account created"});
+                    //Encrypt password for database
+                    bcrypt.hash(password,10,(err,encrypted) => { //encrypted represents the hashed password of the callback
+                        if (err){
+                            res.json({"heading":"Error",
+                                    "statement":"Could not create account. Please try again."});
+                        } else {    //Create new user
+                            const newUser = new User ({
+                                name: username,
+                                email:email,
+                                password:encrypted
+                            });
+                            newUser.save()
+                            res.json({"heading":"Success",
+                                            "statement":"Account created."});
+                        }
+                    }) 
                 }
             });
         }
@@ -39,12 +51,24 @@ router.post('/newuser', (req,res) => {
 router.post('/login', (req,res) => {
     console.log('What is poppin')
     const {username , password} = req.body
-    User.findOne({name:username, password:password}).then(user => {
+    User.findOne({name:username}).then(user => {
         if (user){
-            res.json({"heading":"Success",
-              "statement": "You have logged in successfully"});
+            bcrypt.compare(password,user.password,(err, same) => {
+                if (err) {
+                    res.json({"heading":"Error", "statement": "Could not log in. Please try again."});
+                } else {
+                    if (same) {
+                        //Doing web token stuff
+                        const thepayload = {name:username} //this goes in the jwt payload
+                        const accessToken = jwt.sign(thepayload,process.env.ACCESS_TOKEN_SECRET) //Pull the secret from the environment variable; try not to have expiration if there is no refresh token
+                        res.json({"heading":"Success", "statement": "You have logged in successfully","accessToken":accessToken});
+                    } else {
+                        res.json({"heading":"Incorrect password", "statement": "Please try again"});
+                    }
+                }
+            })
         } else {
-            res.json({"heading":"Incorrect username or password",
+            res.json({"heading":"Account with entered username does not exist",
               "statement": "Try again"});
         }
     });

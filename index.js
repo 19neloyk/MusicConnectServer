@@ -1,10 +1,13 @@
+//Load environment variables
+require("dotenv").config();
+
 //Used for routing and handling requests
 const express = require('express');
 const app = express()
 
+
 //Used for database
 const mongoose = require('mongoose');
-
 const User = require('./models/User')
 const Party = require('./models/Party')
 
