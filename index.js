@@ -12,7 +12,7 @@ const Party = require('./models/Party')
 const db = require('./config/keys').MongoURI;
 
 //Use this to parse json bodies
-app.use(express.urlencoded({extended:true,limit: '50mb'})) //Allows parsing of nested JSON objects
+app.use(express.urlencoded({extended:true,limit: '50mb'})) //Allows parsing of nested JSON objects, VVV
 app.use(express.json({limit: '50mb'})); //Increase limits for each request
 
 //Connect to Database 
