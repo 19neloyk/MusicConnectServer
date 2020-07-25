@@ -42,11 +42,13 @@ router.post('/newparty', (req,res) => {
         var partySongs = theParty.songs
         //This sorts the songs to be in assending order
         partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
+        console.log(partySongs)
         let songsToSend =  partySongs.map(song => ({
           name : song.name,
           artists : song.artists,
           count : song.count
         })).slice(0,15)
+        console.log(songsToSend)
         res.json({
           "title": "Success",
           "message": "Party exists",
@@ -88,6 +90,10 @@ router.post('/newparty', (req,res) => {
     var end = songArr.length 
     while (start <= end) {
       var mid = Math.floor((start+end)/2)
+      if (mid >= songArr.length || mid < 0) {
+        break;
+      }
+      console.log("Current middle index: " + mid)
       if (songCompare(aSong,songArr[mid]) === 0){
         songArr[mid].count += 1
         return 

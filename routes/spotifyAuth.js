@@ -49,7 +49,7 @@ router.post("/spotifyauth/token", ({body: {code: authorization_code}}, response)
   });
   
   // POST /api/refresh_token
-  router.post("/spotifyrefresh_token", ({body: {refresh_token}}, response) => {
+  router.post("/spotifyauth/refresh_token", ({body: {refresh_token}}, response) => {
     console.log("REQUEST RECEIVED")
     axios({
       method: "POST",
