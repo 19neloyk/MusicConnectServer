@@ -8,7 +8,7 @@ const Party = require('../models/Party')
 const jwt = require('jsonwebtoken')
 
 //To start a new party
-router.post('/newparty', (req,res) => {
+router.post('/newparty', authenticateToken, (req,res) => {
     console.log(req.body)
     const {hostName} = req.body 
     console.log(hostName)
@@ -34,7 +34,7 @@ router.post('/newparty', (req,res) => {
   });
   
   //To check if party exists with the current hosts name
-  router.post('/checkparty', (req,res) => {
+  router.post('/checkparty', authenticateToken, (req,res) => {
     const {hostName} = req.body
     console.log("Checking if party exists")
     Party.findOne({hostName : hostName}).then(theParty => {
@@ -111,7 +111,7 @@ router.post('/newparty', (req,res) => {
     })
   }
 
-  router.post('/joinparty', async(req, res) => {
+  router.post('/joinparty',authenticateToken, async(req, res) => {
     console.log("USER CONNECTING TO THE PARTY")
     const {hostName, songs} = req.body //Song will have field name and artists
     Party.findOne({hostName :hostName}).then (party => {
@@ -146,7 +146,7 @@ router.post('/newparty', (req,res) => {
     });
   });
   
-  router.post('/removeparty', (req,res) => {
+  router.post('/removeparty',authenticateToken, (req,res) => {
     const {hostName} = req.body;
     Party.findOneAndRemove({hostName: hostName}, err => {
       if (err){
@@ -165,6 +165,9 @@ router.post('/newparty', (req,res) => {
     }
     //Now, verify the jwt
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err, user) => { //Remember that a user is result of the callback because the payload has a user object
+      if (err){
+        return res.json({"title":"Token Invalid","message":"You do not have access "}) 
+      }
       req.user = user 
       next()
     })

@@ -10,7 +10,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
 
-router.post('/newuser', async (req,res) => {
+router.post('/register', async (req,res) => {
     console.log('What is poppin')
     const {username, email, password} = req.body
     User.findOne ({email:email})
