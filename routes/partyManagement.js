@@ -9,9 +9,8 @@ const jwt = require('jsonwebtoken')
 
 //To start a new party
 router.post('/newparty', authenticateToken, (req,res) => {
-    console.log(req.body)
-    const {hostName} = req.body 
-    console.log(hostName)
+    console.log(req.user)
+    const hostName = req.user 
     console.log('Trying to start a new party by the name of ' + hostName);
     Party.findOne({hostName : hostName}). then (party => {
         if (party) {
@@ -35,7 +34,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
   
   //To check if party exists with the current hosts name
   router.post('/checkparty', authenticateToken, (req,res) => {
-    const {hostName} = req.body
+    const hostName = req.user
     console.log("Checking if party exists")
     Party.findOne({hostName : hostName}).then(theParty => {
       if (theParty) {
@@ -147,7 +146,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
   });
   
   router.post('/removeparty',authenticateToken, (req,res) => {
-    const {hostName} = req.body;
+    const hostName = req.user;
     Party.findOneAndRemove({hostName: hostName}, err => {
       if (err){
         res.json({"title":"Error","message":"Could not delete party"});
@@ -168,7 +167,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
       if (err){
         return res.json({"title":"Token Invalid","message":"You do not have access "}) 
       }
-      req.user = user 
+      req.user = user.name 
+      console.log(req.user)
       next()
     })
   }
