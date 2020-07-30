@@ -65,14 +65,14 @@ router.post('/newparty', authenticateToken, (req,res) => {
 
   //Compare function for sorting the songs on the database
   function songCompare (song1, song2) { //Comparison function used for javascript sort function as well as binary search implementation
-    console.log("Song 1: " +song1)
-    console.log("Song 2: " +song2)
+  //  console.log("Song 1: " +song1)
+  //  console.log("Song 2: " +song2)
     if (song1.name > song2.name) { //Case where first name is greater
       return 1
     } else if (song1.name < song2.name){ //Case where second name is greater
       return -1
     } else { //Case where song names are the same
-        console.log("activate")
+      //ç  console.log("activate")
       if (song1.artists.filter(value => song2.artists.includes(value)).length > 0){   //Case where songs have the same song name and one artist in common (assumption that this quality indicates the same songs)
         return 0
       } else if (song1.artists[0] > song2.artists[0]){ //Case where first artists listed between the two songs is greater for song1
@@ -92,7 +92,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
       if (mid >= songArr.length || mid < 0) {
         break;
       }
-      console.log("Current middle index: " + mid)
+     // console.log("Current middle index: " + mid)
       if (songCompare(aSong,songArr[mid]) === 0){
         songArr[mid].count += 1
         return 
@@ -124,7 +124,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
           }))
           newPartySongs = songObjects
           newPartySongs = newPartySongs.sort(songCompare)
-          console.log(newPartySongs)
+        //  console.log(newPartySongs)
           party.songs = newPartySongs
         } else { 
           curPartySongs = party.songs
@@ -132,7 +132,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
             songAdd(curPartySongs, songs[i])
           }
           newPartySongs = curPartySongs
-          console.log(newPartySongs)
+         // console.log(newPartySongs)
           party.songs = newPartySongs
         }
         party.markModified('songs');
