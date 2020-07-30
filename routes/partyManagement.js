@@ -3,6 +3,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 
 const Party = require('../models/Party')
+const User = require('../models/User')
 
 //For jwt (verifiable requests)
 const jwt = require('jsonwebtoken')
@@ -112,38 +113,71 @@ router.post('/newparty', authenticateToken, (req,res) => {
 
   router.post('/joinparty',authenticateToken, async(req, res) => {
     console.log("USER CONNECTING TO THE PARTY")
+    const userName = req.user
     const {hostName, songs} = req.body //Song will have field name and artists
-    Party.findOne({hostName :hostName}).then (party => {
-      if (party){
-        if (party.songs.length < 2){
-          curPartySongs = party.songs
-          let songObjects = songs.map(song => ({
-            artists : song.artists,
-            name : song.name,
-            count : 1
-          }))
-          newPartySongs = songObjects
-          newPartySongs = newPartySongs.sort(songCompare)
-        //  console.log(newPartySongs)
-          party.songs = newPartySongs
-        } else { 
-          curPartySongs = party.songs
-          for (var i = 0; i < songs.length; i ++){
-            songAdd(curPartySongs, songs[i])
-          }
-          newPartySongs = curPartySongs
-         // console.log(newPartySongs)
-          party.songs = newPartySongs
+    try {
+      var party = await Party.findOne({hostName :hostName});
+      if (party.songs.length < 2){
+        curPartySongs = party.songs
+        let songObjects = songs.map(song => ({
+          artists : song.artists,
+          name : song.name,
+          count : 1
+        }))
+        newPartySongs = songObjects
+        newPartySongs = newPartySongs.sort(songCompare)
+      //  console.log(newPartySongs)
+        party.songs = newPartySongs
+      } else { 
+        curPartySongs = party.songs
+        for (var i = 0; i < songs.length; i ++){
+          songAdd(curPartySongs, songs[i])
         }
-        party.markModified('songs');
-        party.save(err => {console.log(err)});
-        res.json({"title":"Success",
-        "message":"Success joining party"});
-      } else {
-        res.json({"title":"Error","message":"Failure joining party"});
+        newPartySongs = curPartySongs
+       // console.log(newPartySongs)
+        party.songs = newPartySongs
       }
-    });
+      party.memberNames.push(userName)
+      party.markModified('songs');
+      party.save(err => {console.log(err)});
+      var user = await User.findOne({name : userName})
+      user.joinedPartyHost = hostName;
+      user.markModified("joinedPartyHost");
+      user.lastUsedSongs = songs.map(song => ({
+        artists : song.artists,
+        name : song.name
+      }))
+      user.markModified("lastUsedSongs")
+      user.save(err => {console.log(err)});
+      res.json({"title":"Success","message":"Party has been joined"});
+    } catch {
+      res.json({"title":"Error","message":"Failure joining party"});
+      return
+    }
   });
+
+  function songDecrement (songArr, aSong){
+    var start = 0
+    var end = songArr.length 
+    while (start <= end) {
+      var mid = Math.floor((start+end)/2)
+      if (mid >= songArr.length || mid < 0) {
+        break;
+      }
+     // console.log("Current middle index: " + mid)
+      if (songCompare(aSong,songArr[mid]) === 0){
+        songArr[mid].count -= 1
+        if (songArr[mid].count === 0) {
+          songArr.splice(mid,1)
+        }
+        return 
+      } else if (songCompare(aSong,songArr[mid]) > 0){
+        start = mid + 1
+      } else {
+        end = mid - 1
+      }
+    }
+  }
   
   router.post('/removeparty',authenticateToken, (req,res) => {
     const hostName = req.user;
@@ -155,6 +189,49 @@ router.post('/newparty', authenticateToken, (req,res) => {
       }
     });
   });
+
+  router.post('/leaveparty'/*,authenticateToken*/, async (req,res) => {
+    const userName = "neloy" //req.user
+    const {partyHost} = req.body
+    try {
+      var user = await User.findOne({name : userName});
+      console.log ("User found:")
+      console.log (user)
+      user.joinedPartyHost = "";
+      user.markModified('hostNameHolder');
+      user.save();
+      console.log ("User changes saved")
+      try {
+      var joinedParty = await Party.findOne({hostName : partyHost});
+      console.log("Host:")
+      console.log(partyHost)
+      var index = joinedParty.memberNames.indexOf(userName);
+        if (index !== -1) {
+          console.log("Decrement step!")
+          //Edit memberNames array
+          var memNames = joinedParty.memberNames
+          memNames.splice(index,1);
+          joinedParty.memberNames = memNames;
+          joinedParty.markModified("memberNames");
+          //Decrement this user's songs
+          var partySongs = joinedParty.songs
+          for (var k = 0; k < user.lastUsedSongs.length; k++){
+            songDecrement(partySongs,user.lastUsedSongs[k]);
+          }
+          joinedParty.songs = partySongs
+          joinedParty.markModified("songs");
+          joinedParty.save((err) => console.log(err))
+          console.log ("Party saved")
+        }
+      } catch(err){
+        console.log(err)
+      }
+      res.json({"title":"Success","message":"Party deletion successful"});
+    } catch (err){
+      console.log(err)
+      res.json({"title":"Failure","message":err});
+    }
+  })
 
   function authenticateToken(req,res,next) {    //This is middleware to verify json web token requests// next represents the otherwise callback function of express routes
     const authHeader = req.headers['authorization']

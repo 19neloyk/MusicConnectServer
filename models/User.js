@@ -12,7 +12,15 @@ const UserSchema = new mongoose.Schema({
     spotifyAccount: {
         type:String,
         required:false
-    },  
+    },
+    joinedPartyHost: String,
+    lastUsedSongs : [
+        {
+            _id : false,
+            name : String,
+            artists : [String]
+        }
+    ]
 });
 
 const User = mongoose.model('User',UserSchema); //package model to be referred to

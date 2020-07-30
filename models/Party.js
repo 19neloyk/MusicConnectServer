@@ -6,10 +6,7 @@ const PartySchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    memberIds : [{
-        type:String,
-        required:false
-    }],
+    memberNames : [String],
     songs : [{
         _id : false,
         name : String,
