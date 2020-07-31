@@ -190,8 +190,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
     });
   });
 
-  router.post('/leaveparty'/*,authenticateToken*/, async (req,res) => {
-    const userName = "neloy" //req.user
+  router.post('/leaveparty',authenticateToken, async (req,res) => {
+    const userName = req.user
     const {partyHost} = req.body
     try {
       var user = await User.findOne({name : userName});
@@ -229,9 +229,32 @@ router.post('/newparty', authenticateToken, (req,res) => {
       res.json({"title":"Success","message":"Party deletion successful"});
     } catch (err){
       console.log(err)
-      res.json({"title":"Failure","message":err});
+      res.json({"title":"Failure","message":"Could not join party"});
     }
-  })
+  });
+
+  router.get('/getjoinstatus'/*,authenticateToken*/, async (req,res) => {
+    const userName =  "neloy" //req.user
+    try {
+      var user = await User.findOne({name : userName});
+      if (user.joinedPartyHost === "") {
+          res.json({"title":"Success","message": "Received user's status", "userHasHost" : false});
+       } else {
+          var party = await Party.findOne({hostName : user.joinedPartyHost});
+          if (party) {
+            res.json({"title":"Success","message": "Received user's status", "userHasHost" : true, "partyHostName" : user.joinedPartyHost});
+          } else {  //Case where party has been deleted
+            user.joinedPartyHost = ""
+            user.markModified("joinedPartyHost")
+            user.save()
+            res.json({"title":"Success","message": "Received user's status", "userHasHost" : false})
+          }
+        }
+    } catch (err) {
+      console.log(err)
+      res.json({"title":"Failure","message": "Could not get user's status"});
+    }
+  });
 
   function authenticateToken(req,res,next) {    //This is middleware to verify json web token requests// next represents the otherwise callback function of express routes
     const authHeader = req.headers['authorization']

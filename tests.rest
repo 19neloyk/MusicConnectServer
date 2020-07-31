@@ -24,3 +24,10 @@ content-type: application/json
     "partyHost" : "neloy" 
 }
 
+###
+GET http://localhost:5000/getjoinstatus
+content-type: application/json
+
+{
+    
+}
