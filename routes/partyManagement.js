@@ -197,6 +197,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
       var user = await User.findOne({name : userName});
       console.log ("User found:")
       console.log (user)
+      let partyHost = user.joinedPartyHost
       user.joinedPartyHost = "";
       user.markModified('hostNameHolder');
       user.save();
@@ -252,7 +253,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
         }
     } catch (err) {
       console.log(err)
-      res.json({"title":"Failure","message": "Could not get user's status"});
+      res.json({"title":"Failure","message": "Could not get user's status","userHasHost" : false});
     }
   });
 
