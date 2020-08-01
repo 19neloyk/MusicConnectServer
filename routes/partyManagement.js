@@ -10,15 +10,15 @@ const jwt = require('jsonwebtoken')
 
 //To start a new party
 router.post('/newparty', authenticateToken, (req,res) => {
-    console.log(req.user)
+    //console.log(req.user)
     const hostName = req.user 
-    console.log('Trying to start a new party by the name of ' + hostName);
+    //console.log('Trying to start a new party by the name of ' + hostName);
     Party.findOne({hostName : hostName}). then (party => {
         if (party) {
           res.json({"title":"Redundant",
         "message":"Party already exists"})
         } else {
-          console.log("A")
+          //console.log("A")
           const newParty = new Party ({
             hostName: hostName,
             memberIds : [],
@@ -26,7 +26,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
             peopleInParty: 1
           });
           newParty.save();
-          console.log("A")
+          //console.log("A")
           res.json({"title":"Success",
           "message":"A new party has been made"})
         }
@@ -36,19 +36,19 @@ router.post('/newparty', authenticateToken, (req,res) => {
   //To check if party exists with the current hosts name
   router.post('/checkparty', authenticateToken, (req,res) => {
     const hostName = req.user
-    console.log("Checking if party exists")
+    //console.log("Checking if party exists")
     Party.findOne({hostName : hostName}).then(theParty => {
       if (theParty) {
         var partySongs = theParty.songs
         //This sorts the songs to be in assending order
         partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
-        console.log(partySongs)
+        //console.log(partySongs)
         let songsToSend =  partySongs.map(song => ({
           name : song.name,
           artists : song.artists,
           count : song.count
         })).slice(0,15)
-        console.log(songsToSend)
+        //console.log(songsToSend)
         res.json({
           "title": "Success",
           "message": "Party exists",
@@ -112,7 +112,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
   }
 
   router.post('/joinparty',authenticateToken, async(req, res) => {
-    console.log("USER CONNECTING TO THE PARTY")
+    //console.log("USER CONNECTING TO THE PARTY")
     const userName = req.user
     const {hostName, songs} = req.body //Song will have field name and artists
     try {
@@ -195,20 +195,20 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const {partyHost} = req.body
     try {
       var user = await User.findOne({name : userName});
-      console.log ("User found:")
-      console.log (user)
+      //console.log ("User found:")
+      //console.log (user)
       let partyHost = user.joinedPartyHost
       user.joinedPartyHost = "";
       user.markModified('hostNameHolder');
       user.save();
-      console.log ("User changes saved")
+      //console.log ("User changes saved")
       try {
       var joinedParty = await Party.findOne({hostName : partyHost});
-      console.log("Host:")
-      console.log(partyHost)
+      //console.log("Host:")
+      //console.log(partyHost)
       var index = joinedParty.memberNames.indexOf(userName);
         if (index !== -1) {
-          console.log("Decrement step!")
+          //console.log("Decrement step!")
           //Edit memberNames array
           var memNames = joinedParty.memberNames
           memNames.splice(index,1);
@@ -222,7 +222,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
           joinedParty.songs = partySongs
           joinedParty.markModified("songs");
           joinedParty.save((err) => console.log(err))
-          console.log ("Party saved")
+          //console.log ("Party saved")
         }
       } catch(err){
         console.log(err)
@@ -269,7 +269,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
         return res.json({"title":"Token Invalid","message":"You do not have access "}) 
       }
       req.user = user.name 
-      console.log(req.user)
+      //console.log(req.user)
       next()
     })
   }
