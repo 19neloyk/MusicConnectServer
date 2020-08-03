@@ -246,7 +246,9 @@ router.post('/newparty', authenticateToken, (req,res) => {
             res.json({"title":"Success","message": "Received user's status", "userHasHost" : true, "partyHostName" : user.joinedPartyHost});
           } else {  //Case where party has been deleted
             user.joinedPartyHost = ""
+            user.lastUsedSongs = []
             user.markModified("joinedPartyHost")
+            user.markModified("lastUsedSongs")
             user.save()
             res.json({"title":"Success","message": "Received user's status", "userHasHost" : false})
           }
