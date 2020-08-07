@@ -234,8 +234,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
     }
   });
 
-  router.get('/getjoinstatus'/*,authenticateToken*/, async (req,res) => {
-    const userName =  "neloy" //req.user
+  router.get('/getjoinstatus',authenticateToken, async (req,res) => {
+    const userName =  req.user
     try {
       var user = await User.findOne({name : userName});
       if (user.joinedPartyHost === "") {
