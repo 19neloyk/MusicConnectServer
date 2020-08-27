@@ -16,6 +16,7 @@ content-type: application/json
     "password": "password"
 }
 
+
 ###
 POST http://localhost:5000/leaveparty
 content-type: application/json 
@@ -31,3 +32,7 @@ content-type: application/json
 {
     
 }
+
+GET "https://api.spotify.com/v1/search/q=\(finalizedQuery)&type=track&limit=1"
+content-type: application/json
+Authorization: 

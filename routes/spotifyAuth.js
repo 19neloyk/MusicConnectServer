@@ -3,9 +3,12 @@ const express = require('express');
 const btoa = require("btoa"); // base64 encoder
 const axios = require("axios"); // http library
 const qs = require("qs"); // querystring parsing
-SPOTIFY_CLIENT_ID = "044b2c45e77f45aca8da89e338849b6a"
-SPOTIFY_CLIENT_SECRET = "c7d838bc6f3d40889cb11517afc8e3f3"
-SPOTIFY_CLIENT_CALLBACK_URL = "spotify-login-sdk-test-app://spotify-login-callback"
+SPOTIFY_CLIENT_ID = "b4d0a9bfec0d450387f9373cd02a7ac4"
+SPOTIFY_CLIENT_SECRET = "1e3b14c018df41fea5b45ea3720a0533"
+SPOTIFY_CLIENT_CALLBACK_URL = "musicmatch://spotify-login-callback"
+// SPOTIFY_CLIENT_ID = "044b2c45e77f45aca8da89e338849b6a"
+// SPOTIFY_CLIENT_SECRET = "c7d838bc6f3d40889cb11517afc8e3f3"
+// SPOTIFY_CLIENT_CALLBACK_URL = "spotify-login-sdk-test-app://spotify-login-callback"
 ENCRYPTION_SECRET = "cFJLyifeUJUBFWdHzVbykfDmPHtLKLGzViHW9aHGmyTLD8hGXC"
 
 // accept form-urlencoded submissions
@@ -41,6 +44,8 @@ router.post("/spotifyauth/token", ({body: {code: authorization_code}}, response)
       
       // ▾▾▾ --- unencrypted code --- ▾▾▾
       console.log("UNENCRYPTED CODE SENT")
+      //console.log("Here was the response")
+      //console.log(json)
       response.set("Content-Type", "text/json").status(200).send(json);
     }).catch(({response: err}) => {
       console.log("ERROR SENT")
