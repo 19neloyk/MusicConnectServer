@@ -117,6 +117,11 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const {hostName, songs} = req.body //Song will have field name and artists
     try {
       var party = await Party.findOne({hostName :hostName});
+        if (party.memberNames.includes(userName)) {
+          res.json({"title":"Oops","message":"You have already joined this party"});
+          return
+        }
+
       if (party.songs.length < 2){
         curPartySongs = party.songs
         let songObjects = songs.map(song => ({
@@ -149,9 +154,10 @@ router.post('/newparty', authenticateToken, (req,res) => {
       }))
       user.markModified("lastUsedSongs")
       user.save(err => {console.log(err)});
+      //console.log(user.joinedPartyHost);
       res.json({"title":"Success","message":"Party has been joined"});
     } catch {
-      res.json({"title":"Error","message":"Failure joining party"});
+      res.json({"title":"Error","message":"Party not Found"});
       return
     }
   });
@@ -199,7 +205,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
       //console.log (user)
       let partyHost = user.joinedPartyHost
       user.joinedPartyHost = "";
-      user.markModified('hostNameHolder');
+      user.markModified('joinedPartyHost');
       user.save();
       //console.log ("User changes saved")
       try {
@@ -238,13 +244,16 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const userName =  req.user
     try {
       var user = await User.findOne({name : userName});
+      console.log(user.joinedPartyHost);
       if (user.joinedPartyHost === "") {
+          //console.log("A")
           res.json({"title":"Success","message": "Received user's status", "userHasHost" : false});
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
           if (party) {
             res.json({"title":"Success","message": "Received user's status", "userHasHost" : true, "partyHostName" : user.joinedPartyHost});
           } else {  //Case where party has been deleted
+            console.log("B")
             user.joinedPartyHost = ""
             user.lastUsedSongs = []
             user.markModified("joinedPartyHost")
