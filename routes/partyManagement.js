@@ -116,12 +116,19 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const userName = req.user
     const {hostName, songs} = req.body //Song will have field name and artists
     try {
+      var user = await User.findOne({name : userName});
+        if (user.joinedPartyHost != ""){
+          res.json({"title":"Oops","message":"You are already in a party."})
+          return
+        }
+
       var party = await Party.findOne({hostName :hostName});
+      /*
         if (party.memberNames.includes(userName)) {
           res.json({"title":"Oops","message":"You have already joined this party"});
           return
         }
-
+      */
       if (party.songs.length < 2){
         curPartySongs = party.songs
         let songObjects = songs.map(song => ({
@@ -176,7 +183,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
         if (songArr[mid].count === 0) {
           songArr.splice(mid,1)
         }
-        return 
+        return; 
       } else if (songCompare(aSong,songArr[mid]) > 0){
         start = mid + 1
       } else {
@@ -187,13 +194,24 @@ router.post('/newparty', authenticateToken, (req,res) => {
   
   router.post('/removeparty',authenticateToken, (req,res) => {
     const hostName = req.user;
-    Party.findOneAndRemove({hostName: hostName}, err => {
-      if (err){
-        res.json({"title":"Error","message":"Could not delete party"});
-      } else {
-        res.json({"title":"Success","message":"Party deletion successful"});
+    //First, we must delete this party as the joined party host for each user who was in the party
+    User.updateMany({ joinedPartyHost: hostName}, { joinedPartyHost: "" }, (err,raw) => { 
+      if (err) {
+      res.json({"title":"Error","message":"Could not delete party"});
+      //console.log(err);
+      return;
       }
     });
+    //Now we actually remove the party itself from the database
+    Party.findOneAndRemove({hostName: hostName}, err => {
+      if (err) {
+        console.log(err)
+         res.json({"title":"Error","message":"Could not delete party"});
+         return;
+      }
+     });
+    res.json({"title":"Success","message":"Party deletion successful"});
+    return;
   });
 
   router.post('/leaveparty',authenticateToken, async (req,res) => {
