@@ -21,9 +21,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
           //console.log("A")
           const newParty = new Party ({
             hostName: hostName,
-            memberIds : [],
-            songs : [],
-            peopleInParty: 1
+            memberNames : [],
+            songs : []
           });
           newParty.save();
           //console.log("A")
@@ -33,7 +32,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
     });
   });
   
-  //To check if party exists with the current hosts name
+  //To check if party exists with the current hosts name --> Collects the songs of the host and shows them if it does exist
   router.post('/checkparty', authenticateToken, (req,res) => {
     const hostName = req.user
     //console.log("Checking if party exists")
@@ -53,7 +52,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
           "title": "Success",
           "message": "Party exists",
           "doesPartyExist" : true,
-          "topSongs" : songsToSend
+          "topSongs" : songsToSend,
+          "members" :theParty.memberNames
           });
       } else {
         res.json({
@@ -63,6 +63,34 @@ router.post('/newparty', authenticateToken, (req,res) => {
       }
     })
   });
+
+  //Checks if multiple parties exists with host's name
+   router.post('/hitparties', authenticateToken, async (req,res) => {
+      const {partyHosts} = req.body
+      var hitPartiesPromises = []
+      for (var i = 0; i < partyHosts.length; i++) {
+        const curHost = partyHosts[i]
+        hitPartiesPromises[i] = new Promise (async (resolve) => {
+          const party = await Party.findOne({hostName :curHost});
+          console.log(curHost);
+          if (party) {
+            console.log("true")
+            resolve({partyHostUsername : curHost,partyIsActive : true});
+          } else {
+            console.log("false")
+            resolve({partyHostUsername : curHost,partyIsActive : false});
+          }
+        });
+      };
+      try {
+        const results = await  Promise.all(hitPartiesPromises);
+        console.log(results)
+        res.json(results);
+      } catch(err) {
+        console.log(err)
+        res.json({"title":"Oops","message":"There was an issue retrieving party information."})
+      }
+   }); 
 
   //Compare function for sorting the songs on the database
   function songCompare (song1, song2) { //Comparison function used for javascript sort function as well as binary search implementation
@@ -159,7 +187,27 @@ router.post('/newparty', authenticateToken, (req,res) => {
         artists : song.artists,
         name : song.name
       }))
-      user.markModified("lastUsedSongs")
+      
+      
+      //Code for saving the most recent party hosts that the user has joined
+      try {
+      if (user.lastJoinedPartyHosts.includes(hostName)) {
+        var index = user.lastJoinedPartyHosts.indexOf(hostName);
+        if (index != -1) {
+          user.lastJoinedPartyHosts.splice(index, 1);
+        }
+      }
+
+      user.lastJoinedPartyHosts.unshift(hostName);
+      if (user.lastJoinedPartyHosts.length > 5){    //Makes sure that the array is 5 elements long
+        user.lastJoinedPartyHosts.splice(5);
+      }
+      user.markModified("lastJoinedPartyHosts");
+    } catch (err) {
+      console.log("AN ERRORS WITH LAST JOINED PARTY SONGS: ")
+      console.log(err)
+    }
+      user.markModified("lastUsedSongs");
       user.save(err => {console.log(err)});
       //console.log(user.joinedPartyHost);
       res.json({"title":"Success","message":"Party has been joined"});
@@ -264,8 +312,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
       var user = await User.findOne({name : userName});
       console.log(user.joinedPartyHost);
       if (user.joinedPartyHost === "") {
-          //console.log("A")
-          res.json({"title":"Success","message": "Received user's status", "userHasHost" : false});
+          res.json({"title":"Success","message": "Received user's status", "userHasHost" : false, "lastJoinedPartyHosts":user.lastJoinedPartyHosts})
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
           if (party) {
@@ -277,7 +324,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
             user.markModified("joinedPartyHost")
             user.markModified("lastUsedSongs")
             user.save()
-            res.json({"title":"Success","message": "Received user's status", "userHasHost" : false})
+            res.json({"title":"Success","message": "Received user's status", "userHasHost" : false, "lastJoinedPartyHosts":[""]})//user.lastJoinedPartyHosts})
           }
         }
     } catch (err) {

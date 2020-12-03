@@ -20,7 +20,9 @@ const UserSchema = new mongoose.Schema({
             name : String,
             artists : [String]
         }
-    ]
+    ],
+
+    lastJoinedPartyHosts : [String]
 });
 
 const User = mongoose.model('User',UserSchema); //package model to be referred to
