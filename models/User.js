@@ -22,7 +22,11 @@ const UserSchema = new mongoose.Schema({
         }
     ],
 
-    lastJoinedPartyHosts : [String]
+    lastJoinedPartyHosts : [String],
+
+    //To check if songs should currently be loaded
+    lastTimeSpotifyLoaded : {type: Date, default : Date('1987-10-26')},
+    lastTimeAppleMusicLoaded : {type: Date, default : Date('1987-10-26')}
 });
 
 const User = mongoose.model('User',UserSchema); //package model to be referred to

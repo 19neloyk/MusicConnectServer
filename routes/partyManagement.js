@@ -83,7 +83,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
         });
       };
       try {
-        const results = await  Promise.all(hitPartiesPromises);
+        const results = await Promise.all(hitPartiesPromises);
         console.log(results)
         res.json(results);
       } catch(err) {
@@ -142,9 +142,10 @@ router.post('/newparty', authenticateToken, (req,res) => {
   router.post('/joinparty',authenticateToken, async(req, res) => {
     //console.log("USER CONNECTING TO THE PARTY")
     const userName = req.user
-    const {hostName, songs} = req.body //Song will have field name and artists
+    const {hostName, songs, appleMusicLoaded, spotifyLoaded} = req.body //Song will have field name and artists
     try {
       var user = await User.findOne({name : userName});
+        
         if (user.joinedPartyHost != ""){
           res.json({"title":"Oops","message":"You are already in a party."})
           return
@@ -157,6 +158,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
           return
         }
       */
+      //SAVING SONGS TO THE PARTY
       if (party.songs.length < 2){
         curPartySongs = party.songs
         let songObjects = songs.map(song => ({
@@ -180,15 +182,30 @@ router.post('/newparty', authenticateToken, (req,res) => {
       party.memberNames.push(userName)
       party.markModified('songs');
       party.save(err => {console.log(err)});
+
+      //SAVING NEW SONGS TO THE USER
       var user = await User.findOne({name : userName})
       user.joinedPartyHost = hostName;
       user.markModified("joinedPartyHost");
-      user.lastUsedSongs = songs.map(song => ({
-        artists : song.artists,
-        name : song.name
-      }))
+        user.lastUsedSongs = songs.map(song => ({ //We have to be able to add and remove songs based on if they are in spotify or apple music separately; if only user's spotify songs were loaded before, and we just loaded apple music songs, the spotify songs would be forgotten in user.lastUsedSongs
+          artists : song.artists,
+          name : song.name
+        }));
+      user.markModified("lastUsedSongs");
+
+      //WORKING WITH RECORDING IF EITHER MUSIC SERVICE HAS BEEN LOADED AS OF THIS JOIN   
+      if (appleMusicLoaded) {
+        user.lastTimeAppleMusicLoaded = new Date();
+      } 
+
+      if (spotifyLoaded) {
+        user.lastTimeSpotifyLoaded = new Date();
+      }
+      user.markModified("lastTimeAppleMusicLoaded");
+      user.markModified("lastTimeSpotifyLoaded");
       
-      
+
+
       //Code for saving the most recent party hosts that the user has joined
       try {
       if (user.lastJoinedPartyHosts.includes(hostName)) {
@@ -207,7 +224,6 @@ router.post('/newparty', authenticateToken, (req,res) => {
       console.log("AN ERRORS WITH LAST JOINED PARTY SONGS: ")
       console.log(err)
     }
-      user.markModified("lastUsedSongs");
       user.save(err => {console.log(err)});
       //console.log(user.joinedPartyHost);
       res.json({"title":"Success","message":"Party has been joined"});
@@ -311,20 +327,63 @@ router.post('/newparty', authenticateToken, (req,res) => {
     try {
       var user = await User.findOne({name : userName});
       console.log(user.joinedPartyHost);
+
+      console.log("date stuff------------")
+      //Checking if there is a need to upload Spotify or Apple Music right now (depends on whether they have already been uploaded in the past month)
+      var isSpotifyLoaded = false;
+      var isAppleMusicLoaded = false;
+      var now = new Date();
+
+      //Dealing with Spotify date difference
+      var lastSpotifyLoad = new Date(user.lastTimeSpotifyLoaded);
+      console.log(lastSpotifyLoad.getTime())
+      var timeSinceLastSpotifyLoad = Math.abs(now.getTime()-lastSpotifyLoad.getTime());   //Time in MS since last Spotify Load
+      var daysSinceLastSpotifyLoad = Math.ceil(timeSinceLastSpotifyLoad / (1000 * 60 * 60 * 24));   //Time in days since last Apple Music Load
+      console.log(daysSinceLastSpotifyLoad)
+      if (daysSinceLastSpotifyLoad < 30) {
+        isSpotifyLoaded = true;
+      } 
+
+      //Dealing with Apple Music date difference
+      var lastAppleMusicLoad = new Date(user.lastTimeAppleMusicLoaded);
+      console.log(lastAppleMusicLoad)
+      var timeSinceLastAppleMusicLoad = Math.abs(now.getTime() - lastAppleMusicLoad.getTime());   //Time in MS since last Spotify Load
+      var daysSinceLastAppleMusicLoad = Math.ceil(timeSinceLastAppleMusicLoad / (1000 * 60 * 60 * 24));   //Time in days since last Apple Music Load
+      console.log(daysSinceLastAppleMusicLoad)
+      if (daysSinceLastAppleMusicLoad < 30) {
+        isAppleMusicLoaded = true;
+      } 
+
+      console.log(isSpotifyLoaded)
+      console.log(isAppleMusicLoaded)
+
+      console.log("--------------------")
+
       if (user.joinedPartyHost === "") {
-          res.json({"title":"Success","message": "Received user's status", "userHasHost" : false, "lastJoinedPartyHosts":user.lastJoinedPartyHosts})
+          res.json({"title":"Success","message": "Received user's status",
+          "userHasHost" : false,
+          "lastJoinedPartyHosts":user.lastJoinedPartyHosts,
+          "hasSpotifyBeenLoaded":isSpotifyLoaded,
+          "hasAppleMusicBeenLoaded":isAppleMusicLoaded});
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
           if (party) {
-            res.json({"title":"Success","message": "Received user's status", "userHasHost" : true, "partyHostName" : user.joinedPartyHost});
+            res.json({"title":"Success",
+            "message": "Received user's status", 
+            "userHasHost" : true, 
+            "partyHostName" : user.joinedPartyHost});
           } else {  //Case where party has been deleted
             console.log("B")
             user.joinedPartyHost = ""
-            user.lastUsedSongs = []
             user.markModified("joinedPartyHost")
             user.markModified("lastUsedSongs")
             user.save()
-            res.json({"title":"Success","message": "Received user's status", "userHasHost" : false, "lastJoinedPartyHosts":[""]})//user.lastJoinedPartyHosts})
+            res.json({"title":"Success",
+            "message": "Received user's status", 
+            "userHasHost" : false, 
+            "lastJoinedPartyHosts":user.lastJoinedPartyHosts,
+            "hasSpotifyBeenLoaded":isSpotifyLoaded,
+            "hasAppleMusicBeenLoaded":isAppleMusicLoaded}); 
           }
         }
     } catch (err) {
