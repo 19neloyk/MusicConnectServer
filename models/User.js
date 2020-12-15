@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema({
         required:false
     },
     joinedPartyHost: String,
-    lastUsedSongs : [
+    songs : [
         {
             _id : false,
             name : String,
@@ -25,8 +25,7 @@ const UserSchema = new mongoose.Schema({
     lastJoinedPartyHosts : [String],
 
     //To check if songs should currently be loaded
-    lastTimeSpotifyLoaded : {type: Date, default : Date('1987-10-26')},
-    lastTimeAppleMusicLoaded : {type: Date, default : Date('1987-10-26')}
+    lastTimeMusicLoaded : {type: Date, default : Date('1987-10-26')}
 });
 
 const User = mongoose.model('User',UserSchema); //package model to be referred to
