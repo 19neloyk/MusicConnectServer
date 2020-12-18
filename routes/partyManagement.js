@@ -190,17 +190,17 @@ router.post('/newparty', authenticateToken, (req,res) => {
           name : song.name,
           count : 1
         }))
-        newPartySongs = songObjects.sort(songCompare)
-      //  console.log(newPartySongs)
-        party.songs = newPartySongs
+        party.songs = songObjects.sort(songCompare)
       } else { 
-        for (var i = 0; i < songs.length; i ++){
-          songAdd(party.songs, songs[i])
+
+        for (var i = 0; i < user.songs.length; i ++){
+          songAdd(party.songs, user.songs[i])
         }
       }
+
       party.markModified('songs');
       party.memberNames.push(userName)
-      party.markModified('userName');
+      party.markModified('memberNames');
       party.save(err => {console.log(err)});
 
       //Code for saving the most recent party hosts that the user has joined
@@ -226,7 +226,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
       user.save(err => {console.log(err)});
       //console.log(user.joinedPartyHost);
       res.json({"title":"Success","message":"Party has been joined"});
-    } catch {
+    } catch (err) {
+      console.log(err);
       res.json({"title":"Error","message":"Party not Found"});
       return
     }
