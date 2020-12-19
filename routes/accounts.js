@@ -17,20 +17,23 @@ router.post('/register', async (req,res) => {
     .then (user => {
         if (user){
             res.json({"heading":"Email taken",
-                      "statement":"Use a different email"})
+                      "statement":"Use a different email",
+                      "accountCreated": false})
             return
         } else {
             User.findOne({name : username})
             .then (anotherUser => {
                 if (anotherUser) {
                     res.json({"heading":"Username taken",
-                      "statement":"Use a different Username"})
+                      "statement":"Use a different Username",
+                      "accountCreated": false})
                 } else {
                     //Encrypt password for database
                     bcrypt.hash(password,10,(err,encrypted) => { //encrypted represents the hashed password of the callback
                         if (err){
                             res.json({"heading":"Error",
-                                    "statement":"Could not create account. Please try again."});
+                                    "statement":"Could not create account. Please try again.",
+                                    "accountCreated": false});
                         } else {    //Create new user
                             const newUser = new User ({
                                 name: username,
@@ -39,7 +42,8 @@ router.post('/register', async (req,res) => {
                             });
                             newUser.save()
                             res.json({"heading":"Success",
-                                            "statement":"Account created."});
+                                        "statement":"Account created.",
+                                        "accountCreated": true});
                         }
                     }) 
                 }
