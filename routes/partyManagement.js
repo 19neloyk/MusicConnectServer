@@ -1,9 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
+const axios = require('axios')
 
 const Party = require('../models/Party')
 const User = require('../models/User')
+
+const musicAPI = require('../musicServiceAPICalls');
 
 //For jwt (verifiable requests)
 const jwt = require('jsonwebtoken')
@@ -141,7 +144,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
 
   router.post('/uploadsongs',authenticateToken, async(req, res) => {
     const userName = req.user
-    const {songs} = req.body;
+    const {usingApple, usingSpotify, spotifyAccessToken, apple} = req.body;
 
     try {
 
@@ -394,5 +397,6 @@ router.post('/newparty', authenticateToken, (req,res) => {
   }
 
 
+  //For all this code to be accessible by index.js
   module.exports = router
   

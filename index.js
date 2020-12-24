@@ -38,8 +38,8 @@ const partyManagementRouter = require('./routes/partyManagement')
 app.use(partyManagementRouter)
 
 const spotifyAuthRouter = require('./routes/spotifyAuth')
-app.use(spotifyAuthRouter)
 
+app.use(spotifyAuthRouter)
 
 
 //app.post('/')
