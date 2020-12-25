@@ -11,44 +11,48 @@ async function getUsersSpotifySongs (accessToken) {
     //Get user id from spotify
     const idResponse = await axios.get('https://api.spotify.com/v1/me', {
         headers: {
-            'Authorization' : 'Bearer ${accessToken}' 
+            'Authorization' : `Bearer ${accessToken}` 
         }
     });
 
-    var userID = idResponse.id;
+    var userID = idResponse.data.id;
 
     //Get all playlist items
-    const offsetlimit = 50; //Amount of data results we see on one page
+    const offsetLimit = 50; //Amount of data results we see on one page
 
     //Get first page playlist ids
-    const playlistIdsFirstResponse = await axios.get('https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}', {
+    const playlistIdsFirstResponse = await axios.get(`https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}`, {
         headers:{
-            'Authorization' : 'Bearer ${accessToken}' 
+            'Authorization' : `Bearer ${accessToken}`
         }
     });
 
-    const numPlaylists = playlistIdsFirstResponse.total;
-    var playlists = playlistIdsFirstResponse.items;
+    const numPlaylists = playlistIdsFirstResponse.data.total;
+    var playlists = playlistIdsFirstResponse.data.items;
 
     //Get subsequent page playlist items
-    if (numPlaylists > offsetlimit) {
-        const totalPlaylistCalls = Math.ceil(numPlaylists/offsetlimit);
+    if (numPlaylists > offsetLimit) {
+        const totalPlaylistCalls = Math.ceil(numPlaylists/offsetLimit);
 
         var additionalPlaylistCalls = [];
         for (var i = 1; i <= totalPlaylistCalls; i ++) {
-            const index = i * offsetlimit;
-            playlistCalls.push(axios.get('https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}&offset=${index}', {
+            const index = i * offsetLimit;
+            playlistCalls.push(axios.get(`https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}&offset=${index}`, {
                 headers:{
-                    'Authorization' : 'Bearer ${accessToken}' 
+                    'Authorization' : `Bearer ${accessToken}`
                 }
             }));
         }
 
         const remainingPlaylistResponses = Promise.all(additionalPlaylistCalls);
 
-        for (const eachPlaylistResponse in remainingPlaylistResponses) {
-            playlists.push(...eachPlaylistResponse.items) //Spread operator divides array into its individual elements
+        for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
+            const curPlaylists = remainingPlaylistResponses[i].data;
+            for (var j = 0 ; j < curPlaylists.items.length ; j ++){
+                playlists.push(curPlaylists.items[j]);
+            }
         }
+
     }
 
     //At this point, we should have all the playlist items for this user
@@ -60,37 +64,37 @@ async function getUsersSpotifySongs (accessToken) {
 
     var firstPagePlaylistSongCalls = [];
 
-    for (const playlist in playlists) {
-        firstPagePlaylistSongCalls.push(axios.get('https://api.spotify.com/v1/users/${userID}/playlists/${playlist.id}/tracks', {
+    for (var i = 0 ; i < playlists.length ; i ++) {
+        firstPagePlaylistSongCalls.push(axios.get(`https://api.spotify.com/v1/users/${userID}/playlists/${playlists[i].id}/tracks`, {
             headers:{
-                'Authorization' : 'Bearer ${accessToken}' 
+                'Authorization' : `Bearer ${accessToken}` 
             }
         }));
-    };
+    }
 
     const firstPagePlaylistSongResponses = await Promise.all(firstPagePlaylistSongCalls);
 
     //Add first page songs
-    for (const response in firstPagePlaylistSongResponses) {
-        for (const item in response.items) {
-            songs.push(convertSpotifyTrack(item.track));
+
+    for (var i = 0 ; i < firstPagePlaylistSongResponses.length ; i ++) {
+        const curSongs = firstPagePlaylistSongResponses[i].data.items;
+        for (var j = 0; j < curSongs.length; j ++){
+            songs.push(convertSpotifyTrack(curSongs[j].track));
         }
     }
 
-
-    const playlistSongCounts = firstPagePlaylistSongResponses.map((playlistSongsResponse) => playlistSongsResponse.total);
+    const playlistSongCounts = firstPagePlaylistSongResponses.map((playlistSongsResponse) => playlistSongsResponse.data.total);
 
     const remainingPlaylistSongCalls = []
     for (var i = 0 ; i < playlists.length; i ++) {
         const numSongs = playlistSongCounts[i];
         if (numSongs > 100) {
             const totalSongCalls =  Math.ceil(numSongs/100);
-            const songPageIndex = i * 100;
-
             for (var j = 1; j <= totalSongCalls; j ++) {
-                remainingPlaylistSongCalls.push(axios.get('https://api.spotify.com/v1/users/${userID}/playlists/${playlist.id}/tracks?offset=${songPageIndex}', {
+                const songPageIndex = j * 100;
+                remainingPlaylistSongCalls.push(axios.get(`https://api.spotify.com/v1/users/${userID}/playlists/${playlists[i].id}/tracks?offset=${songPageIndex}`, {
                     headers:{
-                        'Authorization' : 'Bearer ${accessToken}' 
+                        'Authorization' : `Bearer ${accessToken}` 
                     }
                 })); 
             }
@@ -105,20 +109,34 @@ async function getUsersSpotifySongs (accessToken) {
             songs.push(convertSpotifyTrack(item.track));
         }
     }
+
+    for (var i = 0 ; i < remaingPagesPlaylistSongResponses.length ; i++){
+        const curSongs = remaingPagesPlaylistSongResponses[i].data;
+        for (var j = 0; j < curSongs.length; j ++){
+            songs.push(convertSpotifyTrack(curSongs[j].track));
+        }
+    }
+
     songs.sort(songCompare);
     const finalSongs = eliminateSongRepetitions(songs);
-    console.log(finalSongs);
+    //console.log(finalSongs);
     return finalSongs;
   }
 
 
 //Convert spotify api tracks into songs
 function convertSpotifyTrack (spotifyTrack) {
+    //console.log(spotifyTrack.artists)
     var artistNames = [];
-    for (const artist in spotifyTrack.artists){
-        artistNames.concat(...artist.split('&').join(',').split(','));
-    } 
-
+    for (var i = 0; i < spotifyTrack.artists.length ; i ++) {
+        const artist = spotifyTrack.artists[i].name;
+        const subArtists = artist.split('&').join(',').split(',');
+        artistNames = artistNames.concat(subArtists);
+    }
+    //Getting rid of trailing spaces in each artist's name
+    for (var i = 0; i < artistNames.length; i ++) {     
+        artistNames[i] = artistNames[i].trim();
+    }
     var song = {
         name: spotifyTrack.name,
         artists: artistNames
@@ -134,19 +152,24 @@ async function getUsersAppleMusicSongs(devToken,userToken){
     var playlists = [];
 
     var nextPageIsPresent = true;
-    var  nextPlaylistsURL = "https://api.music.apple.com/v1/me/library/playlists"
+    var nextPlaylistsURL = "https://api.music.apple.com/v1/me/library/playlists"
 
     while (nextPageIsPresent) {
         const requestLimit = 100;
-        const urlString  = nextPlaylistsURL + "?limit=${requestLimit}";
+        const urlString  = nextPlaylistsURL + `?limit=${requestLimit}`;
         const curPlaylistResponse = await axios.get(urlString,{
             headers : {
-                "Authorization" : "Bearer ${devToken}",
-                "Music-User-Token": "${userToken}"
+                "Authorization" : `Bearer ${devToken}`,
+                "Music-User-Token": `${userToken}`
             }
         });
-        playlists.push(...curPlaylistResponse.data);
-        const next = curPlaylistResponse.next;
+        const curPlaylists = curPlaylistResponse.data.data;
+        for (var j = 0 ; j < curPlaylists.length; j ++) {
+            playlists.push(curPlaylists[j])
+        }
+        
+        const next = curPlaylistResponse.data.next;
+        console.log(`Next : ${next}`);
         if (next) {
             nextPlaylistsURL = "https://api.music.apple.com"+next;
         } else {
@@ -161,29 +184,33 @@ async function getUsersAppleMusicSongs(devToken,userToken){
     var songs = [];
     var playlistSongsLinkStack = [];    //Stack where we keep the "next" song links
 
-    for (const playlist in playlists) {
-        const playlistURL = "https://api.music.apple.com/v1/me/library/playlists/${playlist.attributes.playParams.id}/tracks";
+    for (var j = 0 ; j < playlists.length; j ++) {
+        const playlistURL = `https://api.music.apple.com/v1/me/library/playlists/${playlists[j].attributes.playParams.id}/tracks`;
         playlistSongsLinkStack.push(playlistURL);
     }
 
-    while (playlistSongsLinkStack.length != 0) {    //Seeing if there are still some open playlist links after previous colleciton of songs
+    while (playlistSongsLinkStack.length != 0) {    //Seeing if there are still some open playlist links after previous collection of songs
         const iterationPlaylistSongCalls = [];      //This iteration's promise calls
         while (playlistSongsLinkStack.length != 0) {
             const curPlaylistSongCall =  axios.get(playlistSongsLinkStack.pop(),{
                 headers : {
-                    "Authorization" : "Bearer ${devToken}",
-                    "Music-User-Token": "${userToken}"
+                    "Authorization" : `Bearer ${devToken}`,
+                    "Music-User-Token": `${userToken}`
                 }
             });
             iterationPlaylistSongCalls.push(curPlaylistSongCall);
         }
-
         const iterationResponses = await Promise.all(iterationPlaylistSongCalls);
-        for (const iterationResponse in iterationResponses) {
-            songs.push(...iterationResponse.data);
-            const next = iterationResponse.next;
+        for (var i = 0; i < iterationResponses.length; i ++) {
+            const curSongs = iterationResponses[i].data
+            //console.log(curSongs)
+            for (var j = 0 ; j < curSongs.data.length ; j ++) {
+                songs.push(convertAppleMusicTrack(curSongs.data[j])); 
+            }
+            const next = curSongs.next;
+            //console.log ("NEXT "+next)
             if (next) {
-                playlistSongsLinkStack.push("https://api.music.apple.com${next}")
+                playlistSongsLinkStack.push(`https://api.music.apple.com${next}`)
             }
         }
 
@@ -197,7 +224,10 @@ async function getUsersAppleMusicSongs(devToken,userToken){
   //Convert spotify api tracks into songs
 function convertAppleMusicTrack (appleTrack) {
     const artistNames = appleTrack.attributes.artistName.split('&').join(',').split(',');
-    
+    //Getting rid of trailing spaces in each artist's name
+    for (var i = 0; i < artistNames.length; i ++) {     
+        artistNames[i] = artistNames[i].trim();
+    }
     var song = {
         name: appleTrack.attributes.name,
         artists: artistNames
