@@ -7,6 +7,7 @@ const Party = require('../models/Party')
 const User = require('../models/User')
 
 const musicAPI = require('../musicServiceAPICalls');
+const fineTuning = require('../partyFineTuning');
 
 //For jwt (verifiable requests)
 const jwt = require('jsonwebtoken')
@@ -45,11 +46,12 @@ router.post('/newparty', authenticateToken, (req,res) => {
         //This sorts the songs to be in assending order
         partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
         //console.log(partySongs)
+        const songsLimit = 100
         let songsToSend =  partySongs.map(song => ({
           name : song.name,
           artists : song.artists,
           count : song.count
-        })).slice(0,15)
+        })).slice(0,songsLimit)
         //console.log(songsToSend)
         res.json({
           "title": "Success",

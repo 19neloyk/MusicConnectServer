@@ -139,7 +139,8 @@ function convertSpotifyTrack (spotifyTrack) {
     }
     var song = {
         name: spotifyTrack.name,
-        artists: artistNames
+        artists: artistNames,
+        litness : 0
     }
     return song;
 }
@@ -230,7 +231,8 @@ function convertAppleMusicTrack (appleTrack) {
     }
     var song = {
         name: appleTrack.attributes.name,
-        artists: artistNames
+        artists: artistNames,
+        litness: 0
     }
     return song;
 }
