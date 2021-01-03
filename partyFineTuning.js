@@ -66,7 +66,7 @@ async function getSongsWithLitness(accessToken,songs) {
     var getSongAttributesPromises = [];
     for (var i = 0; i < songIds.length; i += 100){
         var curSongIDList = [];
-        for (var j = 0; j < 100 || i + j < songIDs.length ; j ++) {
+        for (var j = 0; j < 100 && i + j < songIDs.length ; j ++) {
             curSongIDList.push(songIds[i+j]);
         } 
         getSongAttributesPromises.push(generateMultipleSongsAttributesPromise(accessToken,curSongIDList));

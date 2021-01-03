@@ -175,7 +175,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
       
       user.songs = songs.map(song => ({ 
           artists : song.artists,
-          name : song.name
+          name : song.name,
+          litness: 0
         }));
 
         user.lastTimeMusicLoaded = new Date();
