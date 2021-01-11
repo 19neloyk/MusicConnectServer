@@ -117,15 +117,16 @@ module.exports = {
 //------------------------------------------------------------------------------------------------------------------------
 /*
 const theseSongs = [{
-    name : "Song 2",
-    artists: ["Blur"],
+    name : "Astronaut in the Ocean",
+    artists: ["Masked Wolf"],
     litness: 0
 },{
-    name : "Hyper Music",
-    artists : ["Muse"],
+    name : "Dance Monkey",
+    artists : [""],
     litness : 0
 }]
 
-dToken = "BQDUsFLlWu-ZAGOuzoFVfpAk3uG8LVcMsPvRRY3pAeMEhWOokJgKsiCUGIWgr8U7XN1PpuQhVBGN8WIpCF8_HGIFyMaXtU1LpkpXTwNhsB-ZplWrxI7JQEGiRIn9ZdkH7x_de-GqgEHrGcmie-5uQy3QaGzBTkXWO2yk1to8KJjxBQsTZT1sYBgxI46P23YCBpT_-DSphPxJeTzApi9BGprc4I29H9d0XLyado2N6772t6WxCAP31JaB3eZEkrY06wfLK2wmR41xrNA7"
+
+dToken = "BQCGeTZfBKdmot5pFT8iCRgKHAy-Hz-H9CQIkPHK6SROKgOsEvy1qv18s4VS6-LLvQDj7Ng2FnzlNvdyXfdoTnIXy_FV4slwEFePRz1ftgqQ4WcNi_PWA_BLeMEFqB9-kfBE0LDYBpwCSbDU9EBF1hvleUVn9A5ieMtKbIDCm-M3azuNG5SSYyd00_YoAGy4-PDIbTCoTJ8BNMvfako1F0sD9blNp07hHFWXqRmoy-Hz5vuosrSuJXBxoSo4E7EOYaVZC-Z1FZx8YFQj";
 getSongsWithLitness(dToken,theseSongs)
 */

@@ -147,9 +147,14 @@ router.post('/newparty', authenticateToken, (req,res) => {
   router.post('/uploadsongs',authenticateToken, async(req, res) => {
     const userName = req.user
     const {usingApple, usingSpotify, spotifyAccessToken, appleUserToken, appleDeveloperToken} = req.body;
-
+    console.log("UPLOADING SONGS")
+    console.log(usingApple)
+    console.log(usingSpotify)
+    console.log(spotifyAccessToken)
+    console.log(appleUserToken)
+    console.log(appleDeveloperToken)
     var songs = [];
-    if (usingSpotify === true) {
+    if (usingSpotify) {
       try {
         songs = await musicAPI.getUsersSpotifySongs(spotifyAccessToken);
       } catch (err) {
