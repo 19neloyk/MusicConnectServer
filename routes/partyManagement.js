@@ -148,11 +148,13 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const userName = req.user
     const {usingApple, usingSpotify, spotifyAccessToken, appleUserToken, appleDeveloperToken} = req.body;
     console.log("UPLOADING SONGS")
+    console.log(req.body)
     console.log(usingApple)
     console.log(usingSpotify)
     console.log(spotifyAccessToken)
     console.log(appleUserToken)
     console.log(appleDeveloperToken)
+
     var songs = [];
     if (usingSpotify) {
       try {
