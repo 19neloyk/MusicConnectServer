@@ -37,7 +37,7 @@ async function getUsersSpotifySongs (accessToken) {
         var additionalPlaylistCalls = [];
         for (var i = 1; i <= totalPlaylistCalls; i ++) {
             const index = i * offsetLimit;
-            playlistCalls.push(axios.get(`https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}&offset=${index}`, {
+            additionalPlaylistCalls.push(axios.get(`https://api.spotify.com/v1/users/${userID}/playlists?limit=${offsetLimit}&offset=${index}`, {
                 headers:{
                     'Authorization' : `Bearer ${accessToken}`
                 }
