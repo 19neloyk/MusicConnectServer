@@ -44,7 +44,7 @@ async function getUsersSpotifySongs (accessToken) {
             }));
         }
 
-        const remainingPlaylistResponses = Promise.all(additionalPlaylistCalls);
+        const remainingPlaylistResponses = delayedPromiseAll(additionalPlaylistCalls, 50, 1000);
 
         for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
             const curPlaylists = remainingPlaylistResponses[i].data;
@@ -72,14 +72,16 @@ async function getUsersSpotifySongs (accessToken) {
         }));
     }
 
-    const firstPagePlaylistSongResponses = await Promise.all(firstPagePlaylistSongCalls);
+    const firstPagePlaylistSongResponses = await delayedPromiseAll(firstPagePlaylistSongCalls,50, 1000)
 
     //Add first page songs
 
     for (var i = 0 ; i < firstPagePlaylistSongResponses.length ; i ++) {
         const curSongs = firstPagePlaylistSongResponses[i].data.items;
         for (var j = 0; j < curSongs.length; j ++){
-            songs.push(convertSpotifyTrack(curSongs[j].track));
+            if (curSongs[j].track) {
+                songs.push(convertSpotifyTrack(curSongs[j].track));
+            }
         }
     }
 
@@ -101,23 +103,25 @@ async function getUsersSpotifySongs (accessToken) {
         }
     }
 
-    const remaingPagesPlaylistSongResponses = await Promise.all(remainingPlaylistSongCalls);
-
+    const remainingPagesPlaylistSongResponses = await delayedPromiseAll(remainingPlaylistSongCalls,50, 1000);
     //Add remaining pages songs
-    for (const response in remaingPagesPlaylistSongResponses) {
+    for (const response in remainingPagesPlaylistSongResponses) {
         for (const item in response.items) {
             songs.push(convertSpotifyTrack(item.track));
         }
     }
 
-    for (var i = 0 ; i < remaingPagesPlaylistSongResponses.length ; i++){
-        const curSongs = remaingPagesPlaylistSongResponses[i].data;
+    for (var i = 0 ; i < remainingPagesPlaylistSongResponses.length ; i++){
+        if (!remainingPagesPlaylistSongResponses[i]) {
+            continue;
+        }
+        const curSongs = remainingPagesPlaylistSongResponses[i].data;
         for (var j = 0; j < curSongs.length; j ++){
             songs.push(convertSpotifyTrack(curSongs[j].track));
         }
     }
 
-    songs.sort(songCompare);
+    songs = songs.sort(songCompare);
     const finalSongs = eliminateSongRepetitions(songs);
     //console.log(finalSongs);
     return finalSongs;
@@ -128,6 +132,7 @@ async function getUsersSpotifySongs (accessToken) {
 function convertSpotifyTrack (spotifyTrack) {
     //console.log(spotifyTrack.artists)
     var artistNames = [];
+
     for (var i = 0; i < spotifyTrack.artists.length ; i ++) {
         const artist = spotifyTrack.artists[i].name;
         const subArtists = artist.split('&').join(',').split(',');
@@ -195,14 +200,17 @@ async function getUsersAppleMusicSongs(devToken,userToken){
         while (playlistSongsLinkStack.length != 0) {
             const curPlaylistSongCall =  axios.get(playlistSongsLinkStack.pop(),{
                 headers : {
-                    "Authorization" : `Bearer ${devToken}`,
+                    "Authorization" : `Bearer ${devToken}`,  
                     "Music-User-Token": `${userToken}`
                 }
             });
             iterationPlaylistSongCalls.push(curPlaylistSongCall);
         }
-        const iterationResponses = await Promise.all(iterationPlaylistSongCalls);
+        const iterationResponses = await delayedPromiseAll(iterationPlaylistSongCalls,50, 1000);
         for (var i = 0; i < iterationResponses.length; i ++) {
+            if (!iterationResponses[i]) {
+                continue;
+            }
             const curSongs = iterationResponses[i].data
             //console.log(curSongs)
             for (var j = 0 ; j < curSongs.data.length ; j ++) {
@@ -259,13 +267,14 @@ function convertAppleMusicTrack (appleTrack) {
     }
 
   function eliminateSongRepetitions(songArr) {
+      console.log(songArr)
         var index = 0;
         while (index < songArr.length) {
             const repetitionIndex = index + 1;
             if (repetitionIndex >= songArr.length){
                 break;
             }
-            while (songCompare(songArr[index],songArr[repetitionIndex])==0) {
+            while (songCompare(songArr[index],songArr[repetitionIndex])===0) {
                 songArr.splice(repetitionIndex,1);
                 if (repetitionIndex >= songArr.length){
                     break;
@@ -276,6 +285,45 @@ function convertAppleMusicTrack (appleTrack) {
         }
 
         return songArr;
+  }
+
+  async function delayedPromiseAll(promiseArr,requestLimit, delayAmount){
+    //Contains data for all the promises
+    var finalResults = [];
+
+    var i = 0;
+    while (i < promiseArr.length) {
+        //First part deals with API delays in order to evade API request limit errors
+        var requestLimitDelay;
+        //There is only a delay in the case when there has been a previous execution of requests (i.e. i does not equal to 0)
+        if (i !== 0) {                   
+            requestLimitDelay = await delay(delayAmount);
+        }
+
+        //Now we look at the current subsection of the promiseArr (either [i ... (i + requestLimit)] or [i ... (promiseArr.length - 1)])
+        var subPromiseArr = [];
+        for (var j = i; j < i + requestLimit || j < promiseArr.length; j ++) {
+            subPromiseArr.push(promiseArr[j]);
+        }
+
+        const curResults = await Promise.all(subPromiseArr);
+        for (var k = 0; k < curResults.length; k ++) {
+            finalResults.push(curResults[k]);
+        }
+
+        var del;  await delay(delayAmount);
+
+        i += requestLimit;
+    }
+
+    console.log("Returning")
+    return finalResults
+
+  }
+
+  //Returns a promise that delays execution
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   module.exports = {
