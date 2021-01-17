@@ -19,8 +19,9 @@ router.post('/newparty', authenticateToken, (req,res) => {
     //console.log('Trying to start a new party by the name of ' + hostName);
     Party.findOne({hostName : hostName}). then (party => {
         if (party) {
-          res.json({"title":"Redundant",
-        "message":"Party already exists"})
+          res.json({"title" : "Redundant",
+        "message" : "Party already exists", 
+        "isSuccessful" : false})
         } else {
           //console.log("A")
           const newParty = new Party ({
@@ -30,8 +31,9 @@ router.post('/newparty', authenticateToken, (req,res) => {
           });
           newParty.save();
           //console.log("A")
-          res.json({"title":"Success",
-          "message":"A new party has been made"})
+          res.json({"title" : "Success",
+          "message" : "A new party has been made", 
+          "isSuccessful" : true})
         }
     });
   });
@@ -212,7 +214,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
       var user = await User.findOne({name : userName});
         
         if (user.joinedPartyHost != ""){
-          res.json({"title":"Oops","message":"You are already in a party."})
+          res.json({"title":"Oops","message":"You are already in a party.", "isSuccessful" : false})
           return
         }
 
@@ -261,10 +263,10 @@ router.post('/newparty', authenticateToken, (req,res) => {
       user.markModified('joinedPartyHost');
       user.save(err => {console.log(err)});
       //console.log(user.joinedPartyHost);
-      res.json({"title":"Success","message":"Party has been joined"});
+      res.json({"title":"Success","message":"Party has been joined", "isSuccessful" : true});
     } catch (err) {
       console.log(err);
-      res.json({"title":"Error","message":"Party not Found"});
+      res.json({"title":"Oops.","message":"Party not Found", "isSuccessful" : false});
       return
     }
   });
@@ -306,11 +308,11 @@ router.post('/newparty', authenticateToken, (req,res) => {
     Party.findOneAndRemove({hostName: hostName}, err => {
       if (err) {
         console.log(err)
-         res.json({"title":"Error","message":"Could not delete party"});
+         res.json({"title":"Error","message":"Could not delete party","isSuccessful" : false});
          return;
       }
      });
-    res.json({"title":"Success","message":"Party deletion successful"});
+    res.json({"title":"Success","message":"Party deletion successful","isSuccessful" : true});
     return;
   });
 
@@ -351,10 +353,10 @@ router.post('/newparty', authenticateToken, (req,res) => {
       } catch(err){
         console.log(err)
       }
-      res.json({"title":"Success","message":"Party deletion successful"});
+      res.json({"title":"Success","message":"Party deletion successful","isSuccessful" : true});
     } catch (err){
       console.log(err)
-      res.json({"title":"Failure","message":"Could not join party"});
+      res.json({"title":"Failure","message":"Could not join party","isSuccessful" : false});
     }
   });
 
@@ -416,12 +418,12 @@ router.post('/newparty', authenticateToken, (req,res) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1] //First checks if there is header; then looks at header which is in the form 'BEARER <TOKEN>'; note that token is second element of the split string array
     if (token == null){  //case where token does not exist and authHeader = null
-      return res.json({"title":"Action unavailable","message":"The action could not be completed"}) 
+      return res.json({"title":"Action unavailable","message":"The action could not be completed","isSuccessful": false}) 
     }
     //Now, verify the jwt
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err, user) => { //Remember that a user is result of the callback because the payload has a user object
       if (err){
-        return res.json({"title":"Token Invalid","message":"You do not have access "}) 
+        return res.json({"title":"Token Invalid","message":"You do not have access" , "isSuccessful": false}) 
       }
       req.user = user.name 
       //console.log(req.user)
