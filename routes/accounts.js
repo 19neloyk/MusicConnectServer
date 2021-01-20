@@ -65,7 +65,7 @@ router.post('/login', (req,res) => {
                         //Doing web token stuff
                         const thepayload = {name:username} //this goes in the jwt payload
                         const accessToken = jwt.sign(thepayload,process.env.ACCESS_TOKEN_SECRET) //Pull the secret from the environment variable; try not to have expiration if there is no refresh token
-                        res.json({"heading":"Success", "statement": "You have logged in successfully","accessToken":accessToken,"isSuccessful" : true});
+                        res.json({"heading":"Success", "statement": "You have logged in successfully","accessToken":accessToken,"isSuccessful" : true });
                     } else {
                         res.json({"heading":"Incorrect password", "statement": "Please try again","isSuccessful" : false});
                     }

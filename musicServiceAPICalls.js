@@ -28,7 +28,15 @@ async function getUsersSpotifySongs (accessToken) {
     });
 
     const numPlaylists = playlistIdsFirstResponse.data.total;
-    var playlists = playlistIdsFirstResponse.data.items;
+    var playlists = []
+
+    for (var i = 0 ; i < playlistIdsFirstResponse.data.items.length; i++) {
+        const curPlaylist = playlistIdsFirstResponse.data.items[i];
+        console.log(curPlaylist.name)
+        console.log(`${curPlaylist.owner.id === userID ? "true" : "false"}`); //The user is the owner of the current playlist if the playlist's owner id is the same as the user's id   
+        playlists.push(curPlaylist);    
+    }
+    //var playlists = playlistIdsFirstResponse.data.items;
 
     //Get subsequent page playlist items
     if (numPlaylists > offsetLimit) {
@@ -45,15 +53,19 @@ async function getUsersSpotifySongs (accessToken) {
         }
 
         const remainingPlaylistResponses = delayedPromiseAll(additionalPlaylistCalls, 50, 1000);
-
         for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
             const curPlaylists = remainingPlaylistResponses[i].data;
             for (var j = 0 ; j < curPlaylists.items.length ; j ++){
-                playlists.push(curPlaylists.items[j]);
+                const curPlaylist = curPlaylists.items[j];
+                console.log(curPlaylist.name)
+                console.log(`${curPlaylist.owner.id === userID ? "true" : "false"}`); //The user is the owner of the current playlist if the playlist's owner id is the same as the user's id   
+                playlists.push(curPlaylist);
             }
         }
 
     }
+
+
 
     //At this point, we should have all the playlist items for this user
     //Now we must collect all the songs in those playlists
@@ -80,6 +92,7 @@ async function getUsersSpotifySongs (accessToken) {
         const curSongs = firstPagePlaylistSongResponses[i].data.items;
         for (var j = 0; j < curSongs.length; j ++){
             if (curSongs[j].track) {
+
                 songs.push(convertSpotifyTrack(curSongs[j].track));
             }
         }
@@ -160,6 +173,9 @@ async function getUsersAppleMusicSongs(devToken,userToken){
     var nextPageIsPresent = true;
     var nextPlaylistsURL = "https://api.music.apple.com/v1/me/library/playlists"
 
+
+    console.log("The current playlists for this user are ...")
+
     while (nextPageIsPresent) {
         const requestLimit = 100;
         const urlString  = nextPlaylistsURL + `?limit=${requestLimit}`;
@@ -171,6 +187,8 @@ async function getUsersAppleMusicSongs(devToken,userToken){
         });
         const curPlaylists = curPlaylistResponse.data.data;
         for (var j = 0 ; j < curPlaylists.length; j ++) {
+            console.log(curPlaylists[j].attributes.name)
+            console.log(curPlaylists[j].attributes.canEdit) //if canEdit is set to true, then that means that this is one of the playlists that the user has made
             playlists.push(curPlaylists[j])
         }
         
@@ -212,7 +230,6 @@ async function getUsersAppleMusicSongs(devToken,userToken){
                 continue;
             }
             const curSongs = iterationResponses[i].data
-            //console.log(curSongs)
             for (var j = 0 ; j < curSongs.data.length ; j ++) {
                 songs.push(convertAppleMusicTrack(curSongs.data[j])); 
             }
@@ -226,7 +243,7 @@ async function getUsersAppleMusicSongs(devToken,userToken){
     }
     songs.sort(songCompare);
     const finalSongs = eliminateSongRepetitions(songs);
-    console.log(finalSongs);
+    //console.log(finalSongs);
     return finalSongs;
   }
 
