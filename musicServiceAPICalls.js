@@ -89,7 +89,7 @@ async function getUsersSpotifySongs (accessToken) {
     //Add first page songs
 
     for (var i = 0 ; i < firstPagePlaylistSongResponses.length ; i ++) {
-        if (!firstPagePlaylistSongResponses[i].data){
+        if (!firstPagePlaylistSongResponses[i]){
             continue;
         }
         const curSongs = firstPagePlaylistSongResponses[i].data.items;
