@@ -101,7 +101,11 @@ async function getUsersSpotifySongs (accessToken) {
         }
     }
 
-    const playlistSongCounts = firstPagePlaylistSongResponses.map((playlistSongsResponse) => playlistSongsResponse.data.total);
+    const playlistSongCounts = firstPagePlaylistSongResponses.map((playlistSongsResponse) => {
+        if (playlistSongsResponse) {
+            return playlistSongsResponse.data.total
+        }
+    });
 
     const remainingPlaylistSongCalls = []
     for (var i = 0 ; i < playlists.length; i ++) {
@@ -190,6 +194,9 @@ async function getUsersAppleMusicSongs(devToken,userToken){
         });
         const curPlaylists = curPlaylistResponse.data.data;
         for (var j = 0 ; j < curPlaylists.length; j ++) {
+            if (!curPlaylists[j]) {
+                continue;
+            }
             console.log(curPlaylists[j].attributes.name)
             console.log(curPlaylists[j].attributes.canEdit) //if canEdit is set to true, then that means that this is one of the playlists that the user has made
             playlists.push(curPlaylists[j])
