@@ -52,7 +52,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
         let songsToSend =  partySongs.map(song => ({
           name : song.name,
           artists : song.artists,
-          count : song.count
+          count : song.count,
+          isrc : song.isrc
         })).slice(0,songsLimit)
         //console.log(songsToSend)
         res.json({
@@ -103,6 +104,9 @@ router.post('/newparty', authenticateToken, (req,res) => {
   function songCompare (song1, song2) { //Comparison function used for javascript sort function as well as binary search implementation
   //  console.log("Song 1: " +song1)
   //  console.log("Song 2: " +song2)
+    if (song1.isrc !== null && song1.isrc === song2.isrc) {
+      return true;
+    }
     if (song1.name > song2.name) { //Case where first name is greater
       return 1
     } else if (song1.name < song2.name){ //Case where second name is greater
@@ -185,7 +189,8 @@ router.post('/newparty', authenticateToken, (req,res) => {
       user.songs = songs.map(song => ({ 
           artists : song.artists,
           name : song.name,
-          litness: 0
+          litness: 0,
+          isrc : song.isrc
         }));
       
       console.log(user.songs);
@@ -226,6 +231,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
         let songObjects = user.songs.map(song => ({
           artists : song.artists,
           name : song.name,
+          isrc: song.isrc,
           count : 1
         }))
         party.songs = songObjects.sort(songCompare)

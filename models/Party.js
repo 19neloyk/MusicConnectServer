@@ -12,7 +12,8 @@ const PartySchema = new mongoose.Schema({
         name : String,
         artists : [String],
         count : Number,
-        litness : Number
+        litness : Number,
+        isrc: String
     }]
 
 });

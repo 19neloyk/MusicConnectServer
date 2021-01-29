@@ -18,7 +18,8 @@ const UserSchema = new mongoose.Schema({
         {
             _id : false,
             name : String,
-            artists : [String]
+            artists : [String],
+            isrc : String
         }
     ],
 

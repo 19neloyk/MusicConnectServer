@@ -165,7 +165,8 @@ function convertSpotifyTrack (spotifyTrack) {
     var song = {
         name: spotifyTrack.name,
         artists: artistNames,
-        litness : 0
+        litness : 0,
+        isrc: spotifyTrack.external_ids.isrc     
     }
     return song;
 }
@@ -213,9 +214,8 @@ async function getUsersAppleMusicSongs(devToken,userToken){
 
     //Now we have all playlists for this user
     //We must keep iterating the playlists until all
-    //song pages are seen, i.e. when all songs are collected
-
-    var songs = [];
+    //librarysong pages are seen, i.e. when all songs are collected
+    var songIDs = [];
     var playlistSongsLinkStack = [];    //Stack where we keep the "next" song links
 
     for (var j = 0 ; j < playlists.length; j ++) {
@@ -241,7 +241,10 @@ async function getUsersAppleMusicSongs(devToken,userToken){
             }
             const curSongs = iterationResponses[i].data
             for (var j = 0 ; j < curSongs.data.length ; j ++) {
-                songs.push(convertAppleMusicTrack(curSongs.data[j])); 
+                if (!curSongs.data[j].attributes.playParams || !curSongs.data[j].attributes.playParams.catalogId){  //Excludes when playparams are unavailable or there is no catalog id (maybe the user has song downloaded from somewhere)
+                    continue;
+                }
+                songIDs.push(curSongs.data[j].attributes.playParams.catalogId); 
             }
             const next = curSongs.next;
             //console.log ("NEXT "+next)
@@ -251,13 +254,73 @@ async function getUsersAppleMusicSongs(devToken,userToken){
         }
 
     }
-    songs.sort(songCompare);
+
+    //At this point, we have all the raw unconverted library song IDs that we need 
+    //(The reason we don't simply use the library responses is that they often do 
+    //not give us all the information that we need about the current track)
+    //Now we consider getting the actual official apple music song entries
+
+    //Will hold the groups of ids for the sake of organizing individual requests
+    var groupedSongIds = [];
+    for (var i = 0; i < songIDs.length ; i += 300) {
+        //We need to have an array of arrays of ids that are size 300 or less
+        var group = [];
+        for (var j = i; j < i + 300 && j < songIDs.length ;j ++){
+            group.push(songIDs[j]);
+        }
+        groupedSongIds.push(group);
+    }
+
+    //Before executing the request to get the actual entries of these songs,
+    //we need to get the value of the current user's storefront
+    const storefrontResponse = await axios.get("https://api.music.apple.com/v1/me/storefront", {
+        headers : {
+            "Authorization" : `Bearer ${devToken}`,
+            "Music-User-Token": `${userToken}`
+        }
+    });
+
+    const storefront = storefrontResponse.data.data[0].id;
+
+    //Generate list of promises to execute API requests
+    const actualSongRequests = groupedSongIds.map((curGroup) => {
+        return axios.get(`https://api.music.apple.com/v1/catalog/${storefront}/songs`, {
+            headers : {
+                "Authorization" : `Bearer ${devToken}`,
+                "Music-User-Token": `${userToken}`
+            },
+            params : {
+                "ids" : curGroup.join(",")
+            }
+        })
+    })
+
+    const actualSongResponses = await delayedPromiseAll(actualSongRequests,20,1000);
+
+    // "songs" will hold the the converted apple music tracks
+    var songs = [];
+    for (var i = 0; i < actualSongResponses.length ; i ++) {
+        console.log("SONG RESPONSE #" + i)
+        if (!actualSongResponses[i]) {
+            continue;
+        }
+        var theCurrentSongs = actualSongResponses[i].data.data;
+        for (var j = 0 ; j < theCurrentSongs.length ; j ++) {
+            console.log("SONG #"+j)
+            if (!theCurrentSongs[j]) {
+                continue;
+            }
+            songs.push(convertAppleMusicTrack(theCurrentSongs[j]));
+        }
+    }
+
+    songs = songs.sort(songCompare);
     const finalSongs = eliminateSongRepetitions(songs);
     //console.log(finalSongs);
     return finalSongs;
   }
 
-  //Convert spotify api tracks into songs
+  //Convert apple music api tracks into songs
 function convertAppleMusicTrack (appleTrack) {
     const artistNames = appleTrack.attributes.artistName.split('&').join(',').split(',');
     //Getting rid of trailing spaces in each artist's name
@@ -267,7 +330,8 @@ function convertAppleMusicTrack (appleTrack) {
     var song = {
         name: appleTrack.attributes.name,
         artists: artistNames,
-        litness: 0
+        litness: 0,
+        isrc: appleTrack.attributes.isrc
     }
     return song;
 }
@@ -329,7 +393,7 @@ function convertAppleMusicTrack (appleTrack) {
 
         //Now we look at the current subsection of the promiseArr (either [i ... (i + requestLimit)] or [i ... (promiseArr.length - 1)])
         var subPromiseArr = [];
-        for (var j = i; j < i + requestLimit || j < promiseArr.length; j ++) {
+        for (var j = i; j < i + requestLimit && j < promiseArr.length; j ++) {
             subPromiseArr.push(promiseArr[j]);
         }
 
