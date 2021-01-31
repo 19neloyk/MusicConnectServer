@@ -234,7 +234,7 @@ async function getUsersAppleMusicSongs(devToken,userToken){
             });
             iterationPlaylistSongCalls.push(curPlaylistSongCall);
         }
-        const iterationResponses = await delayedPromiseAll(iterationPlaylistSongCalls,50, 1000);
+        const iterationResponses = await delayedPromiseAll(iterationPlaylistSongCalls, 50, 1000);
         for (var i = 0; i < iterationResponses.length; i ++) {
             if (!iterationResponses[i]) {
                 continue;
