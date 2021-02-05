@@ -34,11 +34,16 @@ async function getUsersSpotifySongs (accessToken) {
         const curPlaylist = playlistIdsFirstResponse.data.items[i];
         console.log(curPlaylist.name)
         console.log(`${curPlaylist.owner.id === userID ? "true" : "false"}`); //The user is the owner of the current playlist if the playlist's owner id is the same as the user's id   
+        if (curPlaylist.owner.id === userID) {
+            playlists.push(curPlaylist);    
         playlists.push(curPlaylist);    
+            playlists.push(curPlaylist);    
+        }
     }
     //var playlists = playlistIdsFirstResponse.data.items;
 
     //Get subsequent page playlist items
+    console.log("NUMBER OF PLAYLISTS" + numPlaylists)
     if (numPlaylists > offsetLimit) {
         const totalPlaylistCalls = Math.ceil(numPlaylists/offsetLimit);
 
@@ -52,14 +57,18 @@ async function getUsersSpotifySongs (accessToken) {
             }));
         }
 
-        const remainingPlaylistResponses = delayedPromiseAll(additionalPlaylistCalls, 50, 1000);
+        console.log("Subsequent playlists");
+
+        const remainingPlaylistResponses = await delayedPromiseAll(additionalPlaylistCalls, 25, 1000);
         for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
             const curPlaylists = remainingPlaylistResponses[i].data;
             for (var j = 0 ; j < curPlaylists.items.length ; j ++){
                 const curPlaylist = curPlaylists.items[j];
                 console.log(curPlaylist.name)
                 console.log(`${curPlaylist.owner.id === userID ? "true" : "false"}`); //The user is the owner of the current playlist if the playlist's owner id is the same as the user's id   
-                playlists.push(curPlaylist);
+                if (curPlaylist.owner.id === userID) {    
+                    playlists.push(curPlaylist);
+                }
             }
         }
 
@@ -84,8 +93,7 @@ async function getUsersSpotifySongs (accessToken) {
         }));
     }
 
-    const firstPagePlaylistSongResponses = await delayedPromiseAll(firstPagePlaylistSongCalls,50, 1000)
-
+    const firstPagePlaylistSongResponses = await delayedPromiseAll(firstPagePlaylistSongCalls,20, 1000)
     //Add first page songs
 
     for (var i = 0 ; i < firstPagePlaylistSongResponses.length ; i ++) {
@@ -95,7 +103,6 @@ async function getUsersSpotifySongs (accessToken) {
         const curSongs = firstPagePlaylistSongResponses[i].data.items;
         for (var j = 0; j < curSongs.length; j ++){
             if (curSongs[j].track) {
-
                 songs.push(convertSpotifyTrack(curSongs[j].track));
             }
         }
@@ -103,7 +110,8 @@ async function getUsersSpotifySongs (accessToken) {
 
     const playlistSongCounts = firstPagePlaylistSongResponses.map((playlistSongsResponse) => {
         if (playlistSongsResponse) {
-            return playlistSongsResponse.data.total
+            console.log(playlistSongsResponse.data.total);
+            return playlistSongsResponse.data.total;
         }
     });
 
@@ -122,20 +130,13 @@ async function getUsersSpotifySongs (accessToken) {
             }
         }
     }
-
-    const remainingPagesPlaylistSongResponses = await delayedPromiseAll(remainingPlaylistSongCalls,50, 1000);
+    const remainingPagesPlaylistSongResponses = await delayedPromiseAll(remainingPlaylistSongCalls, 20, 1000);
     //Add remaining pages songs
-    for (const response in remainingPagesPlaylistSongResponses) {
-        for (const item in response.items) {
-            songs.push(convertSpotifyTrack(item.track));
-        }
-    }
-
     for (var i = 0 ; i < remainingPagesPlaylistSongResponses.length ; i++){
         if (!remainingPagesPlaylistSongResponses[i]) {
             continue;
         }
-        const curSongs = remainingPagesPlaylistSongResponses[i].data;
+        const curSongs = remainingPagesPlaylistSongResponses[i].data.items;
         for (var j = 0; j < curSongs.length; j ++){
             songs.push(convertSpotifyTrack(curSongs[j].track));
         }
@@ -200,7 +201,9 @@ async function getUsersAppleMusicSongs(devToken,userToken){
             }
             console.log(curPlaylists[j].attributes.name)
             console.log(curPlaylists[j].attributes.canEdit) //if canEdit is set to true, then that means that this is one of the playlists that the user has made
-            playlists.push(curPlaylists[j])
+            if (curPlaylists[j].attributes.canEdit === true) {
+                playlists.push(curPlaylists[j])
+            }
         }
         
         const next = curPlaylistResponse.data.next;
@@ -234,7 +237,7 @@ async function getUsersAppleMusicSongs(devToken,userToken){
             });
             iterationPlaylistSongCalls.push(curPlaylistSongCall);
         }
-        const iterationResponses = await delayedPromiseAll(iterationPlaylistSongCalls, 50, 1000);
+        const iterationResponses = await delayedPromiseAll(iterationPlaylistSongCalls, 20, 1000);
         for (var i = 0; i < iterationResponses.length; i ++) {
             if (!iterationResponses[i]) {
                 continue;
@@ -358,7 +361,7 @@ function convertAppleMusicTrack (appleTrack) {
     }
 
   function eliminateSongRepetitions(songArr) {
-      console.log(songArr)
+      //console.log(songArr)
         var index = 0;
         while (index < songArr.length) {
             const repetitionIndex = index + 1;

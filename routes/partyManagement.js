@@ -193,7 +193,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
           isrc : song.isrc
         }));
       
-      console.log(user.songs);
+      //console.log(user.songs);
 
         user.lastTimeMusicLoaded = new Date();
       
