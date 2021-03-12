@@ -13,15 +13,16 @@ const fineTuning = require('../partyFineTuning');
 const jwt = require('jsonwebtoken')
 
 //To start a new party
-router.post('/newparty', authenticateToken, (req,res) => {
+router.post('/newparty', authenticateToken, async (req,res) => {
     //console.log(req.user)
     const hostName = req.user 
     //console.log('Trying to start a new party by the name of ' + hostName);
-    Party.findOne({hostName : hostName}). then (party => {
+    Party.findOne({hostName : hostName}). then ( party => {
         if (party) {
           res.json({"title" : "Redundant",
         "message" : "Party already exists", 
         "isSuccessful" : false})
+          return;
         } else {
           //console.log("A")
           const newParty = new Party ({
@@ -31,11 +32,14 @@ router.post('/newparty', authenticateToken, (req,res) => {
           });
           newParty.save();
           //console.log("A")
-          res.json({"title" : "Success",
-          "message" : "A new party has been made", 
-          "isSuccessful" : true})
         }
     });
+    
+    await joinParty(hostName,hostName, () => {}, () => {});
+    setTimeout(function () {
+      res.json({"title" : "Success","message" : "A new party has been made", "isSuccessful" : true});
+    }, 500)
+
   });
   
   //To check if party exists with the current hosts name --> Collects the songs of the host and shows them if it does exist
@@ -56,6 +60,7 @@ router.post('/newparty', authenticateToken, (req,res) => {
           isrc : song.isrc
         })).slice(0,songsLimit)
         //console.log(songsToSend)
+
         res.json({
           "title": "Success",
           "message": "Party exists",
@@ -215,11 +220,19 @@ router.post('/newparty', authenticateToken, (req,res) => {
     //console.log("USER CONNECTING TO THE PARTY")
     const userName = req.user
     const {hostName} = req.body //Song will have field name and artists
+      await joinParty(userName, hostName, () => {
+        res.json({"title":"Success","message":"Party has been joined", "isSuccessful" : true});
+      }, () => {
+        res.json({"title":"Oops.","message":"Party not Found", "isSuccessful" : false});
+      })
+  });
+
+  async function joinParty(userName, hostName, successCallback, errorCallback) {
     try {
       var user = await User.findOne({name : userName});
         
+        //Where party already exists
         if (user.joinedPartyHost != ""){
-          res.json({"title":"Oops","message":"You are already in a party.", "isSuccessful" : false})
           return
         }
 
@@ -269,13 +282,13 @@ router.post('/newparty', authenticateToken, (req,res) => {
       user.markModified('joinedPartyHost');
       user.save(err => {console.log(err)});
       //console.log(user.joinedPartyHost);
-      res.json({"title":"Success","message":"Party has been joined", "isSuccessful" : true});
+      successCallback();
     } catch (err) {
       console.log(err);
-      res.json({"title":"Oops.","message":"Party not Found", "isSuccessful" : false});
+      errorCallback()
       return
     }
-  });
+  }
 
   function songDecrement (songArr, aSong){
     var start = 0
