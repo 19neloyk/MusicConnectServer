@@ -11,6 +11,9 @@ const mongoose = require('mongoose');
 const User = require('./models/User')
 const Party = require('./models/Party')
 
+//To use the native js promises
+mongoose.Promise = global.Promise
+
 //Configure Database
 const db = require('./config/keys').MongoURI;
 

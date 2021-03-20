@@ -12,17 +12,20 @@ const fineTuning = require('../partyFineTuning');
 //For jwt (verifiable requests)
 const jwt = require('jsonwebtoken')
 
+//To use the native js promises with mongoose
+mongoose.Promise = global.Promise 
+
 //To start a new party
 router.post('/newparty', authenticateToken, async (req,res) => {
     //console.log(req.user)
     const hostName = req.user 
     //console.log('Trying to start a new party by the name of ' + hostName);
-    Party.findOne({hostName : hostName}). then ( party => {
+    Party.findOne({hostName : hostName}). then ( async(party) => {
         if (party) {
-          res.json({"title" : "Redundant",
+        res.json({"title" : "Redundant",
         "message" : "Party already exists", 
-        "isSuccessful" : false})
-          return;
+        "isSuccessful" : false});
+        return;
         } else {
           //console.log("A")
           const newParty = new Party ({
@@ -32,17 +35,19 @@ router.post('/newparty', authenticateToken, async (req,res) => {
           });
           newParty.save();
           //console.log("A")
+
+          await leaveParty(hostName, () => {}, () => {
+            res.json({"title":"Failure","message":"Could not join party","isSuccessful" : false});
+            return;
+          })
+          await joinParty(hostName,hostName, () => {}, () => {});
+          setTimeout(function () {
+            res.json({"title" : "Success","message" : "A new party has been made", "isSuccessful" : true});
+            return;
+          }, 500);
+
         }
     });
-    await leaveParty(hostName, () => {}, () => {
-      res.json({"title":"Failure","message":"Could not join party","isSuccessful" : false});
-      return;
-    })
-    await joinParty(hostName,hostName, () => {}, () => {});
-    setTimeout(function () {
-      res.json({"title" : "Success","message" : "A new party has been made", "isSuccessful" : true});
-    }, 500)
-
   });
   
   //To check if party exists with the current hosts name --> Collects the songs of the host and shows them if it does exist
@@ -71,11 +76,13 @@ router.post('/newparty', authenticateToken, async (req,res) => {
           "topSongs" : songsToSend,
           "members" :theParty.memberNames
           });
+          return;
       } else {
         res.json({
           "title": "Party Not Found",
           "message": "Party does not exist",
           "doesPartyExist" : false});
+          return;
       }
     })
   });
@@ -102,9 +109,11 @@ router.post('/newparty', authenticateToken, async (req,res) => {
         const results = await Promise.all(hitPartiesPromises);
         console.log(results)
         res.json(results);
+        return;
       } catch(err) {
         console.log(err)
         res.json({"title":"Oops","message":"There was an issue retrieving party information."})
+        return;
       }
    }); 
 
@@ -210,11 +219,12 @@ router.post('/newparty', authenticateToken, async (req,res) => {
         
         user.save(err => {console.log(err)});
         res.json ({"title": "Success", "message" : "Songs have been uploaded", "haveSongsBeenUploaded" : true});
-
+        return;
     } catch(err) {
       
       console.log(err);
       res.json ({"title": "Oops", "message" : "There was a problem with uploading your songs", "haveSongsBeenUploaded" : false});
+      return;
     }
 
   });
@@ -225,8 +235,10 @@ router.post('/newparty', authenticateToken, async (req,res) => {
     const {hostName} = req.body //Song will have field name and artists
       await joinParty(userName, hostName, () => {
         res.json({"title":"Success","message":"Party has been joined", "isSuccessful" : true});
+        return;
       }, () => {
         res.json({"title":"Oops.","message":"Party not Found", "isSuccessful" : false});
+        return;
       })
   });
 
@@ -296,8 +308,8 @@ router.post('/newparty', authenticateToken, async (req,res) => {
   function songDecrement (songArr, aSong){
     var start = 0
     var end = songArr.length 
-    console.log("Current arr length: " + songArr.length)
-    console.log("Current Song Processed: " + aSong)
+    // console.log("Current arr length: " + songArr.length)
+    // console.log("Current Song Processed: " + aSong)
     while (start <= end) {
       var mid = Math.floor((start+end)/2)
       if (mid >= songArr.length || mid < 0) {
@@ -307,14 +319,14 @@ router.post('/newparty', authenticateToken, async (req,res) => {
       //console.log("Current middle index: " + mid)
       if (songCompare(aSong,songArr[mid]) === 0){
         songArr[mid].count -= 1
-        console.log("Current count being processed:")
-        console.log(songArr[mid].count)
+        // console.log("Current count being processed:")
+        // console.log(songArr[mid].count)
         if (songArr[mid].count === 0) {
           songArr.splice(mid,1)
         }
         return; 
       } else if (songCompare(aSong,songArr[mid]) > 0){
-        console.log("Compare UP from " + songArr[mid])
+        // console.log("Compare UP from " + songArr[mid])
         start = mid + 1
       } else { ("Compare DOWN from " + songArr[mid])
         end = mid - 1
@@ -350,8 +362,10 @@ router.post('/newparty', authenticateToken, async (req,res) => {
     
     await leaveParty(userName, () => {
       res.json({"title":"Success","message":"Party deletion successful","isSuccessful" : true});
+      return;
     }, () => {
       res.json({"title":"Failure","message":"Could not join party","isSuccessful" : false});
+      return;
     })
 
   });
@@ -370,23 +384,25 @@ router.post('/newparty', authenticateToken, async (req,res) => {
       var joinedParty = await Party.findOne({hostName : partyHost});
       //console.log("Host:")
       //console.log(partyHost)  
-      var index = joinedParty.memberNames.indexOf(userName);
-        if (index !== -1) {
-          //Edit memberNames array
-          var memNames = joinedParty.memberNames
-          memNames.splice(index,1);
-          joinedParty.memberNames = memNames;
-          joinedParty.markModified("memberNames");
-          //Decrement this user's songs
-          var partySongs = joinedParty.songs
-          for (var k = 0; k < user.songs.length; k++){ //We use user.songs to keep the indices in check (cross-reference with the actual songs to be written to the party thereafter)
-            songDecrement(partySongs,user.songs[k]);
+      if (joinedParty){ 
+        var index = joinedParty.memberNames.indexOf(userName);
+          if (index !== -1) {
+            //Edit memberNames array
+            var memNames = joinedParty.memberNames
+            memNames.splice(index,1);
+            joinedParty.memberNames = memNames;
+            joinedParty.markModified("memberNames");
+            //Decrement this user's songs
+            var partySongs = joinedParty.songs
+            for (var k = 0; k < user.songs.length; k++){ //We use user.songs to keep the indices in check (cross-reference with the actual songs to be written to the party thereafter)
+              songDecrement(partySongs,user.songs[k]);
+            }
+            joinedParty.songs = partySongs
+            joinedParty.markModified("songs");
+            joinedParty.save((err) => console.log(err))
+            //console.log ("Party saved")
           }
-          joinedParty.songs = partySongs
-          joinedParty.markModified("songs");
-          joinedParty.save((err) => console.log(err))
-          //console.log ("Party saved")
-        }
+      }
       } catch(err){
         console.log(err)
       }
@@ -425,6 +441,7 @@ router.post('/newparty', authenticateToken, async (req,res) => {
           "userHasHost" : false,
           "lastJoinedPartyHosts":user.lastJoinedPartyHosts,
           "hasMusicBeenLoaded" : isMusicLoaded});
+          return;
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
           if (party) {
@@ -432,6 +449,7 @@ router.post('/newparty', authenticateToken, async (req,res) => {
             "message": "Received user's status", 
             "userHasHost" : true, 
             "partyHostName" : user.joinedPartyHost});
+            return;
           } else {  //Case where party has been deleted
             console.log("B")
             user.joinedPartyHost = ""
@@ -443,11 +461,13 @@ router.post('/newparty', authenticateToken, async (req,res) => {
             "userHasHost" : false, 
             "lastJoinedPartyHosts":user.lastJoinedPartyHosts,
             "hasMusicBeenLoaded" : isMusicLoaded}); 
+            return;
           }
         }
     } catch (err) {
       console.log(err)
       res.json({"title":"Failure","message": "Could not get user's status","userHasHost" : false});
+      return;
     }
   });
 
@@ -455,12 +475,14 @@ router.post('/newparty', authenticateToken, async (req,res) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1] //First checks if there is header; then looks at header which is in the form 'BEARER <TOKEN>'; note that token is second element of the split string array
     if (token == null){  //case where token does not exist and authHeader = null
-      return res.json({"title":"Action unavailable","message":"The action could not be completed","isSuccessful": false}) 
+      res.json({"title":"Action unavailable","message":"The action could not be completed","isSuccessful": false}) 
+      return;
     }
     //Now, verify the jwt
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err, user) => { //Remember that a user is result of the callback because the payload has a user object
       if (err){
-        return res.json({"title":"Token Invalid","message":"You do not have access" , "isSuccessful": false}) 
+        res.json({"title":"Token Invalid","message":"You do not have access" , "isSuccessful": false}) 
+        return;
       }
       req.user = user.name 
       //console.log(req.user)
