@@ -15,6 +15,8 @@ const jwt = require('jsonwebtoken')
 //To use the native js promises with mongoose
 mongoose.Promise = global.Promise 
 
+SONGS_LIMIT = 100
+
 //To start a new party
 router.post('/newparty', authenticateToken, async (req,res) => {
     //console.log(req.user)
@@ -60,7 +62,7 @@ router.post('/newparty', authenticateToken, async (req,res) => {
         //This sorts the songs to be in assending order
         partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
         //console.log(partySongs)
-        const songsLimit = 100
+        const songsLimit = SONGS_LIMIT
         let songsToSend =  partySongs.map(song => ({
           name : song.name,
           artists : song.artists,
@@ -248,8 +250,13 @@ router.post('/newparty', authenticateToken, async (req,res) => {
         
         //Where party already exists
         if (user.joinedPartyHost != ""){
-          return
+          await leaveParty(userName,() =>{},()=>{});
         }
+      
+      if (user.songs.length < 1) {
+        successCallback()
+        return;
+      }
 
       var party = await Party.findOne({hostName :hostName});
 
@@ -444,12 +451,22 @@ router.post('/newparty', authenticateToken, async (req,res) => {
           return;
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
-          if (party) {
+          if (party) {  //Case where we have found a party  that the joiner is currently in
+            const songsLimit = SONGS_LIMIT
+            //Collection of the top songs of the party
+            let songsToSend =  party.songs.map(song => ({
+              name : song.name,
+              artists : song.artists,
+              count : song.count,
+              isrc : song.isrc
+            })).slice(0,songsLimit)
+
             res.json({"title":"Success",
             "message": "Received user's status", 
             "userHasHost" : true, 
-            "partyHostName" : user.joinedPartyHost});
-            return;
+            "partyHostName" : user.joinedPartyHost,
+            "topSongs" : songsToSend});
+            return; bv 
           } else {  //Case where party has been deleted
             console.log("B")
             user.joinedPartyHost = ""
