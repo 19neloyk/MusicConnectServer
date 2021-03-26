@@ -4,6 +4,7 @@ require("dotenv").config();
 //Used for routing and handling requests
 const express = require('express');
 const app = express()
+const web_app = express()
 
 
 //Used for database
@@ -42,7 +43,9 @@ app.use('/api',accountsRouter)
 app.use('/api',partyManagementRouter)
 app.use('/api',spotifyAuthRouter)
 
+
+web_app.listen(80, console.log("Server started on port 80"))
 const websiteRouter = require('./routes/website')
-app.use(websiteRouter)
+web_app.use(websiteRouter)
 
 //app.post('/')
