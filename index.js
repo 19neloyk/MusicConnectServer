@@ -36,13 +36,13 @@ app.listen(PORT,console.log(`Server started on port ${PORT}`))
 
 
 const accountsRouter = require('./routes/accounts')
-app.use(accountsRouter)
 const partyManagementRouter = require('./routes/partyManagement')
-app.use(partyManagementRouter)
-
 const spotifyAuthRouter = require('./routes/spotifyAuth')
+app.use('/api',accountsRouter)
+app.use('/api',partyManagementRouter)
+app.use('/api',spotifyAuthRouter)
 
-app.use(spotifyAuthRouter)
-
+const websiteRouter = require('./routes/website')
+app.use(websiteRouter)
 
 //app.post('/')
