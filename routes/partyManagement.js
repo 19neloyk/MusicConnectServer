@@ -452,9 +452,12 @@ router.post('/newparty', authenticateToken, async (req,res) => {
        } else {
           var party = await Party.findOne({hostName : user.joinedPartyHost});
           if (party) {  //Case where we have found a party  that the joiner is currently in
+            var partySongs = party.songs
+            //This sorts the songs to be in assending order
+            partySongs.sort(function(songA,songB) { return parseFloat(songB.count) - parseFloat(songA.count) } );
             const songsLimit = SONGS_LIMIT
             //Collection of the top songs of the party
-            let songsToSend =  party.songs.map(song => ({
+            let songsToSend =  partySongs.map(song => ({
               name : song.name,
               artists : song.artists,
               count : song.count,
@@ -466,7 +469,7 @@ router.post('/newparty', authenticateToken, async (req,res) => {
             "userHasHost" : true, 
             "partyHostName" : user.joinedPartyHost,
             "topSongs" : songsToSend});
-            return; bv 
+            return;  
           } else {  //Case where party has been deleted
             console.log("B")
             user.joinedPartyHost = ""
