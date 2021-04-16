@@ -59,7 +59,7 @@ async function getUsersSpotifySongs (accessToken) {
 
         console.log("Subsequent playlists");
 
-        const remainingPlaylistResponses = await delayedPromiseAll(additionalPlaylistCalls, 25, 1000);
+        const remainingPlaylistResponses = await delayedPromiseAll(additionalPlaylistCalls, 20, 1000);
         for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
             const curPlaylists = remainingPlaylistResponses[i].data;
             for (var j = 0 ; j < curPlaylists.items.length ; j ++){
@@ -405,7 +405,8 @@ function convertAppleMusicTrack (appleTrack) {
             finalResults.push(curResults[k]);
         }
 
-        var del;  await delay(delayAmount);
+        var del;  
+        await delay(delayAmount);
 
         i += requestLimit;
     }
