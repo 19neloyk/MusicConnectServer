@@ -59,7 +59,7 @@ async function getUsersSpotifySongs (accessToken) {
 
         console.log("Subsequent playlists");
 
-        const remainingPlaylistResponses = await delayedPromiseAll(additionalPlaylistCalls, 20, 1000);
+        const remainingPlaylistResponses = await delayedPromiseAll(additionalPlaylistCalls, 1, 50);
         for (var i = 0 ; i < remainingPlaylistResponses.length ; i ++){
             const curPlaylists = remainingPlaylistResponses[i].data;
             for (var j = 0 ; j < curPlaylists.items.length ; j ++){
@@ -93,7 +93,7 @@ async function getUsersSpotifySongs (accessToken) {
         }));
     }
 
-    const firstPagePlaylistSongResponses = await delayedPromiseAll(firstPagePlaylistSongCalls,20, 1000)
+    const firstPagePlaylistSongResponses = await delayedPromiseAll(firstPagePlaylistSongCalls,1, 50)
     //Add first page songs
 
     for (var i = 0 ; i < firstPagePlaylistSongResponses.length ; i ++) {
@@ -130,13 +130,16 @@ async function getUsersSpotifySongs (accessToken) {
             }
         }
     }
-    const remainingPagesPlaylistSongResponses = await delayedPromiseAll(remainingPlaylistSongCalls, 20, 1000);
+    const remainingPagesPlaylistSongResponses = await delayedPromiseAll(remainingPlaylistSongCalls, 1, 50);
     //Add remaining pages songs
     for (var i = 0 ; i < remainingPagesPlaylistSongResponses.length ; i++){
         if (!remainingPagesPlaylistSongResponses[i]) {
             continue;
         }
         const curSongs = remainingPagesPlaylistSongResponses[i].data.items;
+
+
+
         for (var j = 0; j < curSongs.length; j ++){
             songs.push(convertSpotifyTrack(curSongs[j].track));
         }
@@ -384,9 +387,11 @@ function convertAppleMusicTrack (appleTrack) {
   async function delayedPromiseAll(promiseArr,requestLimit, delayAmount){
     //Contains data for all the promises
     var finalResults = [];
-
     var i = 0;
     while (i < promiseArr.length) {
+        console.log(i)
+        //'del' is ultimately the final delay amount; this can be either the parameter 'delayAmount' or the amount given in a retry-after
+        var del = delayAmount
         //First part deals with API delays in order to evade API request limit errors
         var requestLimitDelay;
         //There is only a delay in the case when there has been a previous execution of requests (i.e. i does not equal to 0)
@@ -399,16 +404,28 @@ function convertAppleMusicTrack (appleTrack) {
         for (var j = i; j < i + requestLimit && j < promiseArr.length; j ++) {
             subPromiseArr.push(promiseArr[j]);
         }
-
-        const curResults = await Promise.all(subPromiseArr);
-        for (var k = 0; k < curResults.length; k ++) {
-            finalResults.push(curResults[k]);
+        var curResults;
+        try {
+            curResults = await Promise.all(Array.from(subPromiseArr));
+            for (var k = 0; k < curResults.length; k ++) {
+                finalResults.push(curResults[k]);
+            }
+        } catch (err) {
+            console.log("ERROR WITH EXECUTING PROMISES")
+            console.log(err.response)
+            console.log(err.response.config.url)
+            
+            
+            //Specific to requests
+            var retryAfter = err.response.headers['retry-after']
+            if (retryAfter) {
+                del = parseInt(retryAfter) * 1000
+                console.log(del)
+                //i -= requestLimit
+            }
         }
-
-        var del;  
-        await delay(delayAmount);
-
         i += requestLimit;
+        await delay(del);
     }
 
     console.log("Returning")
