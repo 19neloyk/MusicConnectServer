@@ -44,8 +44,8 @@ app.use('/api',partyManagementRouter)
 app.use('/api',spotifyAuthRouter)
 
 
-web_app.listen(80, console.log("Server started on port 80"))
-const websiteRouter = require('./routes/website')
-web_app.use(websiteRouter)
+//web_app.listen(80, console.log("Server started on port 80"))
+//const websiteRouter = require('./routes/website')
+//web_app.use(websiteRouter)
 
 //app.post('/')
