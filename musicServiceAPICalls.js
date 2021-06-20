@@ -419,7 +419,7 @@ function convertAppleMusicTrack (appleTrack) {
             //Specific to requests
             var retryAfter = err.response.headers['retry-after']
             if (retryAfter) {
-                del = parseInt(retryAfter) * 1000
+                del = (parseInt(retryAfter) * 1000) + 2000
                 console.log(del)
                 //i -= requestLimit
             }
